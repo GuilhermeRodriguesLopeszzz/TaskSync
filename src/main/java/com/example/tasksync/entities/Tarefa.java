@@ -8,6 +8,8 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.time.LocalDate;
+
 @Entity
 //Get and Setters
 @Data
@@ -15,18 +17,18 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 //Construtor com argumentos
 @AllArgsConstructor
+public class Tarefa {
 
-public class Usuario {
+        @Id
+        @GeneratedValue(strategy = GenerationType.IDENTITY)
+        public Long id;
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    public Long id;
+        public String titulo;
 
-    public String nome;
+        public String descricao;
 
-    public String cpf;
+        public String status;
 
-    public String senha;
+        public LocalDate dataPrazo;
+    }
 
-    public String email;
-}

@@ -1,10 +1,11 @@
 package com.example.tasksync.controllers;
 
 import com.example.tasksync.entities.Usuario;
+import com.example.tasksync.repository.UsuarioRepository;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
@@ -12,14 +13,20 @@ import java.util.List;
 @RequestMapping("/usuarios")
 public class UsuarioController {
 
+    @Autowired
+    private UsuarioRepository usuarioRepository;
+
     @GetMapping
     public ResponseEntity<?> ListarTodos(){
 
-        List<Usuario> usuarios = List.of(
-                new Usuario(1L, "Guilherme", "12345678910", "121233", "email")
-        );
-
-        return ResponseEntity.ok(usuarios);
+        return ResponseEntity.ok(usuarioRepository.findAll());
     }
 
+    @PostMapping
+    @ResponseStatus(HttpStatus.CREATED)
+    public ResponseEntity<Usuario> criar(@RequestBody Usuario usuario){
+
+        var usuarioBanco = usuarioRepository.save(usuario);
+        return ResponseEntity.ok(usuarioBanco);
+    }
 }

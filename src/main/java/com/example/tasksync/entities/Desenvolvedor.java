@@ -15,18 +15,18 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 //Construtor com argumentos
 @AllArgsConstructor
+public class Desenvolvedor {
 
-public class Usuario {
+        @Id
+        @GeneratedValue(strategy = GenerationType.IDENTITY)
+        public Long id;
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    public Long id;
+        public String nome;
 
-    public String nome;
+        public String cpf;
 
-    public String cpf;
+        public String senha;
 
-    public String senha;
+        public String email;
 
-    public String email;
 }
