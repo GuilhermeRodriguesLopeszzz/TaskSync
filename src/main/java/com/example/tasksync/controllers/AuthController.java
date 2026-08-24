@@ -12,7 +12,7 @@ import java.net.HttpURLConnection;
 
 @RestController
 @RequestMapping("/auth")
-@Tag(description = "Controller de autenticação", name="Autenticação")
+@Tag(name="Autenticação", description = "Controller de autenticação")
 public class AuthController {
 
 
