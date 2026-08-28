@@ -21,7 +21,7 @@ public class AuthController {
 
     @PostMapping("/login")
     @Operation(description = "Método de login", summary = "Autenticação de usuarios")
-    public ResponseEntity<?> login(@RequestParam LoginRequest loginRequest){
+    public ResponseEntity<?> login(@RequestBody LoginRequest loginRequest){
 
         if(loginRequest.email().equals("string")&& loginRequest.senha().equals("string")){
             //Gera Token
