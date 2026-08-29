@@ -21,14 +21,14 @@ public class Tarefa {
 
         @Id
         @GeneratedValue(strategy = GenerationType.IDENTITY)
-        public Long id;
+        private Long id;
 
-        public String titulo;
+        private String titulo;
 
-        public String descricao;
+        private String descricao;
 
-        public String status;
+        private String status;
 
-        public LocalDate dataPrazo;
+        private LocalDate dataPrazo;
     }
 

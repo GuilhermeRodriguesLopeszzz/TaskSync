@@ -22,16 +22,16 @@ public class Projeto {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    public Long id;
+    private Long id;
 
-    public String nome;
+    private String nome;
 
-    public String descricao;
+    private String descricao;
 
-    public String status;
+    private String status;
 
-    public LocalDate dataInicio;
+    private LocalDate dataInicio;
 
-    public LocalDate dataPrevistaFim;
+    private LocalDate dataPrevistaFim;
 
 }
