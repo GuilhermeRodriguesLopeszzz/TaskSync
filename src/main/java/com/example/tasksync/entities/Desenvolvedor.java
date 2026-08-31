@@ -29,4 +29,6 @@ public class Desenvolvedor {
 
         private String email;
 
+        private EnumStatusDesenvolvedor status;
+
 }

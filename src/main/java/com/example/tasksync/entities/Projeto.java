@@ -28,7 +28,7 @@ public class Projeto {
 
     private String descricao;
 
-    private String status;
+    private EnumStatusProjeto status;
 
     private LocalDate dataInicio;
 

@@ -27,8 +27,8 @@ public class Tarefa {
 
         private String descricao;
 
-        private String status;
-
         private LocalDate dataPrazo;
+
+        private EnumStatusTarefa status;
     }
 

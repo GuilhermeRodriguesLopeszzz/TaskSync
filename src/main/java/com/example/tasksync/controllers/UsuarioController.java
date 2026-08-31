@@ -28,15 +28,6 @@ public class UsuarioController {
         return ResponseEntity.ok(usuarioRepository.findAll());
     }
 
-    @GetMapping("/{id}")
-    public ResponseEntity<Usuario> buscarPorId(@PathVariable Long id){
-        Usuario usuarioBanco = usuarioRepository.findById(id).orElse(null);
-        if (usuarioBanco != null){
-            return ResponseEntity.ok(usuarioBanco);
-        }
-        return ResponseEntity.notFound().build();
-    }
-
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
@@ -47,7 +38,20 @@ public class UsuarioController {
         return ResponseEntity.ok(usuarioBanco);
     }
 
+    //Apartir de aqui
+
+    @GetMapping("/{id}")
+    @Operation(summary = "Metodo de consulta de usuario por id", description = "Metodo responsavel em efetuar a busca de um usuario especifico atraves do seu id")
+    public ResponseEntity<Usuario> buscarPorId(@PathVariable Long id){
+        Usuario usuarioBanco = usuarioRepository.findById(id).orElse(null);
+        if (usuarioBanco != null){
+            return ResponseEntity.ok(usuarioBanco);
+        }
+        return ResponseEntity.notFound().build();
+    }
+
     @PatchMapping("/{id}/status")
+    @Operation(summary = "Metodo de atualização de status do usuario", description = "Metodo responsavel em atualizar apenas o status de um usuario especifico")
     public ResponseEntity<Void> atualizarStatus(@PathVariable Long id, @RequestBody AtualizarStatusRquest statusRquest){
 
         Usuario usuarioBanco = usuarioRepository.findById(id).orElse(null);
@@ -60,6 +64,7 @@ public class UsuarioController {
     }
 
     @PutMapping("/{id}")
+    @Operation(summary = "Metodo de atualização de usuario", description = "Metodo responsavel em atualizar todos os dados de um usuario existente")
     public ResponseEntity<Usuario> atualizarUsuario(@PathVariable Long id, @RequestBody Usuario usuario){
 
         try {
@@ -80,6 +85,7 @@ public class UsuarioController {
     }
 
     @DeleteMapping("/{id}/excluir")
+    @Operation(summary = "Metodo de exclusão de usuario", description = "Metodo responsavel em efetuar a exclusão logica de um usuario, alterando seu status para EXCLUIDO")
     public ResponseEntity<Void> excluir(@PathVariable Long id){
         Usuario usuarioBanco = usuarioRepository.findById(id).orElse(null);
         if (usuarioBanco != null){
