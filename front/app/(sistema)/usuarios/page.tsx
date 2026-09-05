@@ -1,7 +1,18 @@
+import Link from "next/link";
+
 export default function Usuarios() {
     return (
-      <>
-        Usuarios
-      </>
+      <div>
+        <div><h1>Gestão de usuarios</h1>
+        <Link href="/usuarios/novo"></Link>
+      </div>
+
+      <div>
+        <div><table>
+          <thead>
+            <tr><th>Nome</th></tr></thead>
+            <tbody><tr><td>Guilherme</td></tr></tbody></table></div>
+      </div>
+      </div>
     );
   }
