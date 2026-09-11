@@ -1,33 +1,55 @@
+"use client"
 import Link from "next/link";
+import { useEffect, useState } from "react";
+import axios from "axios";
+import { Tarefa } from "../types/tarefa";
 
-export default function Tarefa() {
+export default function Tarefas() {
+
+  const [tarefas, setTarefas] = useState<Tarefa[]>([]);
+
+useEffect(() => {
+  carregarDados();
+}, []);
+
+const carregarDados = async () => {
+  try {
+    const dados = await axios.get<Tarefa[]>("http://localhost:8080/tarefa");
+    setTarefas(dados.data);
+  } catch (error) {
+    alert("Erro ao carregar dados");
+  }
+};
     return (
-<div>
-  <div>
-    <h1>Gestão de tarefas</h1>
-    <Link href="/tarefas/novo"></Link>
+<div className="min-h-screen w-full bg-[#0a0a0f] px-6 py-10 md:px-10 md:py-14">
+  <div className="max-w-7xl mx-auto flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-10">
+    <h1 className="text-2xl sm:text-3xl font-bold text-white tracking-tight">Gestão de tarefas</h1>
+    <Link href="/tarefas/novo" className="inline-flex items-center justify-center px-5 py-2.5 rounded-full bg-gradient-to-r from-amber-400 to-orange-500 hover:from-amber-300 hover:to-orange-400 text-black font-bold text-sm transition-all duration-200 hover:-translate-y-0.5 shadow-lg shadow-orange-500/25 hover:shadow-orange-400/40 w-fit"></Link>
   </div>
 
-  <div>
-    <div>
-      <table>
+  <div className="max-w-7xl mx-auto">
+    <div className="rounded-3xl bg-white/[0.03] border border-white/10 backdrop-blur-xl shadow-2xl shadow-black/40 overflow-x-auto">
+      <table className="w-full text-sm text-left">
         <thead>
-          <tr>
-            <th>ID</th>
-            <th>Título</th>
-            <th>Descrição</th>
-            <th>Data Prazo</th>
-            <th>Status</th>
+          <tr className="border-b border-white/10 bg-white/[0.02]">
+            <th className="px-6 py-4 font-semibold text-zinc-400 text-xs uppercase tracking-wider">ID</th>
+            <th className="px-6 py-4 font-semibold text-zinc-400 text-xs uppercase tracking-wider">Título</th>
+            <th className="px-6 py-4 font-semibold text-zinc-400 text-xs uppercase tracking-wider">Descrição</th>
+            <th className="px-6 py-4 font-semibold text-zinc-400 text-xs uppercase tracking-wider">Data Prazo</th>
+            <th className="px-6 py-4 font-semibold text-zinc-400 text-xs uppercase tracking-wider">Status</th>
           </tr>
         </thead>
-        <tbody>
-          <tr>
-            <td>1</td>
-            <td>Tela de login</td>
-            <td>Tela de login do projeto</td>
-            <td>10/10/26</td>
-            <td>Ativo</td>
+        <tbody className="divide-y divide-white/5">
+        {tarefas.map((tarefa)=> (
+          <tr className="hover:bg-white/[0.03] transition-colors">
+            <td className="px-6 py-4 text-zinc-500 font-mono text-xs">{tarefa.id}</td>
+            <td className="px-6 py-4 font-medium text-white">{tarefa.titulo}</td>
+            <td className="px-6 py-4 text-zinc-400">{tarefa.descricao}</td>
+            <td className="px-6 py-4 text-zinc-400 font-mono text-xs">{tarefa.dataprazo}</td>
+            <td className="px-6 py-4 text-emerald-400 font-semibold text-xs">{tarefa.status}</td>
           </tr>
+
+          ))}
         </tbody>
       </table>
     </div>

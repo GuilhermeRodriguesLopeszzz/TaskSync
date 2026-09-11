@@ -4,7 +4,7 @@ import axios from "axios";
 import Link from "next/link";
 
 import { useEffect, useState } from "react";
-import { Usuario } from "../types/Usuario";
+import { Usuario } from "../types/usuario";
 
 
 
