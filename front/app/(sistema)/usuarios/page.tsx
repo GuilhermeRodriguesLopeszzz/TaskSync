@@ -47,7 +47,7 @@ const carregarDados = async () => {
         </thead>
         <tbody className="divide-y divide-white/5">
         {usuarios.map((usuario)=> (
-          <tr key={usuario.id}className="hover:bg-white/[0.03] transition-colors">
+          <tr key={usuario.id} className="hover:bg-white/[0.03] transition-colors">
             <td className="px-6 py-4 text-zinc-500 font-mono text-xs">{usuario.id}</td>
             <td className="px-6 py-4 font-medium text-white">{usuario.nome}</td>
             <td className="px-6 py-4 text-zinc-400 font-mono text-xs">{usuario.cpf}</td>

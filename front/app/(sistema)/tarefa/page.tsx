@@ -41,7 +41,7 @@ const carregarDados = async () => {
         </thead>
         <tbody className="divide-y divide-white/5">
         {tarefas.map((tarefa)=> (
-          <tr className="hover:bg-white/[0.03] transition-colors">
+          <tr key={tarefa.id} className="hover:bg-white/[0.03] transition-colors">
             <td className="px-6 py-4 text-zinc-500 font-mono text-xs">{tarefa.id}</td>
             <td className="px-6 py-4 font-medium text-white">{tarefa.titulo}</td>
             <td className="px-6 py-4 text-zinc-400">{tarefa.descricao}</td>
@@ -50,6 +50,12 @@ const carregarDados = async () => {
           </tr>
 
           ))}
+
+          {
+  tarefas.length===0 && (
+    <tr><td colSpan={5} className="px-6 py-16 text-center text-zinc-500 italic text-sm">Nenhuma tarefa encontrada</td></tr>
+  )
+}
         </tbody>
       </table>
     </div>
