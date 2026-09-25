@@ -1,6 +1,5 @@
 import Link from "next/link";
-import DesenvolvedorForm from "../components/ProjetoForm";
-
+import DesenvolvedorForm from "../components/DesenvolvedorForm";
 export default function CadastroDesenvolvedor(){
 
     return(

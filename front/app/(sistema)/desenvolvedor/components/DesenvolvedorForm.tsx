@@ -1,0 +1,86 @@
+"use client"
+import Link from "next/link";
+import { Desenvolvedor, DesenvolvedorFormProps } from "../../types/desenvolvedor";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
+import axios from "axios";
+
+export default function DesenvolvedorForm({ desenvolvedorExistente }: DesenvolvedorFormProps) {
+        const router = useRouter()
+    //Valor Inicial
+    const [desenvolvedor, setDesenvolvedor] = useState<Desenvolvedor>
+
+        (desenvolvedorExistente || new Desenvolvedor(null, "", "", "", "", "ATIVO"));
+    //Atualiação Valor
+    const handlerChange = (campo: 'nome' | 'email' | 'cpf' | 'senha', valor: string) => {
+        setDesenvolvedor(valorAnterior =>
+            new Desenvolvedor(
+                valorAnterior.id,
+                campo === 'nome' ? valor : valorAnterior.nome,
+                campo === 'cpf' ? valor : valorAnterior.cpf,
+                campo === 'senha' ? valor : valorAnterior.senha,
+                campo === 'email' ? valor : valorAnterior.email,
+                valorAnterior.status,
+                
+            )
+
+        )
+    };
+
+    const handlerSalvar = async (formData: FormData) => {
+
+        if (desenvolvedorExistente) {
+
+            var dadosRetorno = await axios.put<number>("http://localhost:8080/desenvolvedor/" + desenvolvedor.id, desenvolvedor)
+            if (dadosRetorno.status == 200) {
+                alert("Desenvolvedor foi salvo com sucesso!")
+
+            } else {
+                alert(dadosRetorno.data);
+                return;
+            }
+            router.push("/desenvolvedor")
+
+        } else {
+
+            var dadosRetorno = await axios.post<number>("http://localhost:8080/desenvolvedor", desenvolvedor)
+            if (dadosRetorno.status == 200) {
+                alert("Desenvolvedor foi salvo com sucesso!")
+
+            } else {
+                alert(dadosRetorno.data);
+                return;
+            }
+            router.push("/desenvolvedor")
+        }
+    }
+    return (
+        <form action={handlerSalvar}>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-5">
+                <div className="flex flex-col gap-1.5 sm:col-span-2">
+                    <label className="text-sm font-medium text-zinc-300">Nome completo</label>
+                    <input name="nome" value={desenvolvedor.nome} required onChange={(e) => handlerChange('nome', e.target.value)} placeholder="João da Silva" className="w-full px-4 py-2.5 bg-white/[0.04] border border-white/10 rounded-lg text-white text-sm placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-amber-400/50 focus:border-amber-400/50 transition-all"/>
+                </div>
+                <div className="flex flex-col gap-1.5">
+                    <label className="text-sm font-medium text-zinc-300">CPF</label>
+                    <input name="CPF" value={desenvolvedor.cpf} required onChange={(e) => handlerChange('cpf', e.target.value)} placeholder="000.000.000-00" className="w-full px-4 py-2.5 bg-white/[0.04] border border-white/10 rounded-lg text-white text-sm placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-amber-400/50 focus:border-amber-400/50 transition-all"/>
+                </div>
+                <div className="flex flex-col gap-1.5">
+                    <label className="text-sm font-medium text-zinc-300">E-mail</label>
+                    <input name="email" value={desenvolvedor.email} required onChange={(e) => handlerChange('email', e.target.value)} placeholder="joao@gmail.com.br" className="w-full px-4 py-2.5 bg-white/[0.04] border border-white/10 rounded-lg text-white text-sm placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-amber-400/50 focus:border-amber-400/50 transition-all"/>
+                </div>
+                <div className="flex flex-col gap-1.5 sm:col-span-2">
+                    <label className="text-sm font-medium text-zinc-300">Senha</label>
+                    <input name="senha" value={desenvolvedor.senha} required onChange={(e) => handlerChange('senha', e.target.value)} className="w-full sm:w-1/2 px-4 py-2.5 bg-white/[0.04] border border-white/10 rounded-lg text-white text-sm placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-amber-400/50 focus:border-amber-400/50 transition-all"/>
+                </div>
+
+                <div className="sm:col-span-2 flex items-center justify-end gap-3 mt-4 pt-5 border-t border-white/10">
+                    <Link href="/desenvolvedor" className="px-4 py-2 rounded-lg text-zinc-400 hover:text-white text-sm font-medium transition-colors">Cancelar</Link>
+                    <button type="submit" className="px-5 py-2 rounded-lg bg-amber-400 hover:bg-amber-300 text-black font-semibold text-sm transition-colors">Salvar</button>
+                </div>
+
+            </div>
+        </form>
+    );
+}

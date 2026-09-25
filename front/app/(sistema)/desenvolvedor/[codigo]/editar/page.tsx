@@ -2,13 +2,38 @@
 
 import Link from "next/link";
 
-import { useParams } from "next/navigation";
-import DesenvolvedorForm from "../../components/ProjetoForm";
+import { useParams, useRouter } from "next/navigation";
+import DesenvolvedorForm from "../../components/DesenvolvedorForm";
+import { useEffect, useState } from "react";
+import { Desenvolvedor } from "@/app/(sistema)/types/desenvolvedor";
+import axios from "axios";
 
 export default function EditarDesenvolvedor(){
     const parametro = useParams();
 
     const codigo = Number (parametro.codigo);
+
+     const router = useRouter();
+
+    const [desenvolvedor, setDesenvolvedor] = useState<Desenvolvedor|null>(null)
+
+    useEffect(() => {
+
+        buscarDados();
+}, []);
+
+const buscarDados = async()=>{
+    const valorDesenvolvedorBack = await axios.get<Desenvolvedor>("http://localhost:8080/desenvolvedor/"+codigo)
+
+    if (valorDesenvolvedorBack.status==200){
+        setDesenvolvedor(valorDesenvolvedorBack.data);
+    }else{
+        router.push("/desenvolvedor")
+    }
+    
+}
+
+if (!desenvolvedor) return (<div className="p-8">Carregando dados</div>);
 
 
     return(
@@ -22,7 +47,7 @@ export default function EditarDesenvolvedor(){
                     </div>
                 </div>
                 <div className="bg-white/[0.03] border border-white/10 rounded-2xl shadow-xl shadow-black/30 p-6 sm:p-8">
-                    <DesenvolvedorForm/>
+                    <DesenvolvedorForm desenvolvedorExistente={desenvolvedor}/>
                 </div>
             </div>
         </div>
