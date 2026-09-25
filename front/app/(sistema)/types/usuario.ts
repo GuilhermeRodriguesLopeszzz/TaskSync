@@ -5,5 +5,10 @@ export class Usuario {
     public email: string,
     public status: string,
     public cpf: string,
+    public senha: string
   ) {}
+}
+
+export interface UsuarioFormProps{
+  usuarioExistente?: Usuario
 }

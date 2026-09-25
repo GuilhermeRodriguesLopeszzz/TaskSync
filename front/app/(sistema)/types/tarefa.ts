@@ -3,10 +3,11 @@ export class Tarefa {
     public id: number | null,
     public titulo: string,
     public descricao: string,
-    public dataprazo: string,
+    public dataPrazo: string,
     public status: string,
   ) {}
 }
 
-
-
+export interface TarefaFormProps{
+  tarefaExistente?: Tarefa
+}
