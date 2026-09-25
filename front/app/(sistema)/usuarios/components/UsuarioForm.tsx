@@ -31,7 +31,7 @@ export default function UsuarioForm({ usuarioExistente }: UsuarioFormProps) {
 
         if (usuarioExistente) {
 
-            var dadosRetorno = await axios.put<number>("http://localhost:8080/usuarios" + usuario.id, usuario)
+            var dadosRetorno = await axios.put<number>("http://localhost:8080/usuarios/" + usuario.id, usuario)
             if (dadosRetorno.status == 200) {
                 alert("Usuario foi salvo com sucesso!")
 

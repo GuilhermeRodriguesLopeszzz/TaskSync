@@ -3,13 +3,15 @@ export class Projeto {
     public id: number | null,
     public nome: string,
     public descricao: string,
-    public datainicio: string,
-    public dataprevista: string,
+    public dataInicio: string,
+    public dataPrevistaFim: string,
     public status: string,
   ) {}
 }
 
-
+export interface ProjetoFormProps{
+  projetoExistente?: Projeto
+}
 
 
 

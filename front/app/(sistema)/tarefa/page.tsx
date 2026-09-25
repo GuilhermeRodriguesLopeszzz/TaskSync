@@ -63,7 +63,7 @@ const handlerDeletarTarefa = async (tarefa: Tarefa) => {
 <div className="min-h-screen w-full bg-[#0a0a0f] px-6 py-10 md:px-10 md:py-14">
   <div className="max-w-7xl mx-auto flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-10">
     <h1 className="text-2xl sm:text-3xl font-bold text-white tracking-tight">Gestão de tarefas</h1>
-    <Link href="/tarefas/novo" className="inline-flex items-center justify-center px-5 py-2.5 rounded-full bg-gradient-to-r from-amber-400 to-orange-500 hover:from-amber-300 hover:to-orange-400 text-black font-bold text-sm transition-all duration-200 hover:-translate-y-0.5 shadow-lg shadow-orange-500/25 hover:shadow-orange-400/40 w-fit"></Link>
+    <Link href="/tarefa/novo" className="inline-flex items-center justify-center px-5 py-2.5 rounded-full bg-gradient-to-r from-amber-400 to-orange-500 hover:from-amber-300 hover:to-orange-400 text-black font-bold text-sm transition-all duration-200 hover:-translate-y-0.5 shadow-lg shadow-orange-500/25 hover:shadow-orange-400/40 w-fit">Adicionar tarefa</Link>
   </div>
 
   <div className="max-w-7xl mx-auto">
@@ -116,7 +116,7 @@ const handlerDeletarTarefa = async (tarefa: Tarefa) => {
 
           {
   tarefas.length===0 && (
-    <tr><td colSpan={5} className="px-6 py-16 text-center text-zinc-500 italic text-sm">Nenhuma tarefa encontrada</td></tr>
+    <tr><td colSpan={6} className="px-6 py-16 text-center text-zinc-500 italic text-sm">Nenhuma tarefa encontrada</td></tr>
   )
 }
         </tbody>

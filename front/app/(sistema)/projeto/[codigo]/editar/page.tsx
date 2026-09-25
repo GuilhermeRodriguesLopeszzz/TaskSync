@@ -2,16 +2,41 @@
 
 import Link from "next/link";
 
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import ProjetoForm from "../../components/ProjetoForm";
+import { useEffect, useState } from "react";
+import { Projeto } from "@/app/(sistema)/types/projeto";
+import axios from "axios";
 
-export default function EditarProjeto(){
+export default function EditarProjeto() {
     const parametro = useParams();
 
-    const codigo = Number (parametro.codigo);
+    const codigo = Number(parametro.codigo);
+
+    const router = useRouter();
+
+    const [projeto, setProjetos] = useState<Projeto | null>(null)
+
+    useEffect(() => {
+
+        buscarDados();
+    }, []);
+
+    const buscarDados = async () => {
+        const valorProjetoBack = await axios.get<Projeto>("http://localhost:8080/projetos/" + codigo)
+
+        if (valorProjetoBack.status == 200) {
+            setProjetos(valorProjetoBack.data);
+        } else {
+            router.push("/projeto")
+        }
+
+    }
+
+    if (!projeto) return (<div className="min-h-screen w-full flex items-center justify-center bg-[#0a0a0f] text-zinc-400 text-sm p-8">Carregando dados</div>);
 
 
-    return(
+    return (
         <div className="w-full px-6 py-10 md:px-10 md:py-14">
             <div className="max-w-4xl mx-auto">
                 <div className="mb-10">
@@ -22,7 +47,7 @@ export default function EditarProjeto(){
                     </div>
                 </div>
                 <div className="bg-white/[0.03] border border-white/10 rounded-2xl shadow-xl shadow-black/30 p-6 sm:p-8">
-                    <ProjetoForm/>
+                    <ProjetoForm projetoExistente={projeto}/>
                 </div>
             </div>
         </div>

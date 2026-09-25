@@ -110,7 +110,7 @@ export default function Usuarios() {
 
               {
                 usuarios.length === 0 && (
-                  <tr><td colSpan={6} className="px-6 py-16 text-center text-zinc-500 italic text-sm">Nenhum usuario encontrado</td></tr>
+                  <tr><td colSpan={7} className="px-6 py-16 text-center text-zinc-500 italic text-sm">Nenhum usuario encontrado</td></tr>
                 )
               }
             </tbody>

@@ -56,14 +56,18 @@ export default function TarefaForm({ tarefaExistente }: TarefaFormProps) {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-5">
                 <div className="flex flex-col gap-1.5 sm:col-span-2">
                     <label className="text-sm font-medium text-zinc-300">Título</label>
-                    <input name="titulo" value={tarefa.titulo ?? ""} required onChange={(e) => handlerChange('titulo', e.target.value)} placeholder="Título da tarefa" className="w-full px-4 py-2.5 bg-white/[0.04] border border-white/10 rounded-lg text-white text-sm placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-amber-400/50 focus:border-amber-400/50 transition-all"/>
+                    <input name="titulo" value={tarefa.titulo} required onChange={(e) => handlerChange('titulo', e.target.value)} placeholder="Título da tarefa" className="w-full px-4 py-2.5 bg-white/[0.04] border border-white/10 rounded-lg text-white text-sm placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-amber-400/50 focus:border-amber-400/50 transition-all"/>
                 </div>
                 <div className="flex flex-col gap-1.5">
                     <label className="text-sm font-medium text-zinc-300">Descrição</label>
-                    <input name="descricao" value={tarefa.descricao ?? ""} required onChange={(e) => handlerChange('descricao', e.target.value)} placeholder="Descrição da tarefa" className="w-full px-4 py-2.5 bg-white/[0.04] border border-white/10 rounded-lg text-white text-sm placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-amber-400/50 focus:border-amber-400/50 transition-all"/>
+                    <input name="descricao" value={tarefa.descricao} required onChange={(e) => handlerChange('descricao', e.target.value)} placeholder="Descrição da tarefa" className="w-full px-4 py-2.5 bg-white/[0.04] border border-white/10 rounded-lg text-white text-sm placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-amber-400/50 focus:border-amber-400/50 transition-all"/>
                 </div>
                 <div className="flex flex-col gap-1.5">
                     <label className="text-sm font-medium text-zinc-300">Data Prazo</label>
+                    {/* Protege contra null (??) antes de chamar .substring(), 
+                     que exige o formato "YYYY-MM-DD" pedido pelo input type="date".
+                     Título e descrição não precisam disso porque só são exibidos direto 
+                     no value, sem chamar nenhum método sobre a string. */}
                     <input type="date" name="dataPrazo" value={(tarefa.dataPrazo ?? "").substring(0, 10)} required onChange={(e) => handlerChange('dataPrazo', e.target.value)} className="w-full px-4 py-2.5 bg-white/[0.04] border border-white/10 rounded-lg text-white text-sm placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-amber-400/50 focus:border-amber-400/50 transition-all"/>
                 </div>
 
