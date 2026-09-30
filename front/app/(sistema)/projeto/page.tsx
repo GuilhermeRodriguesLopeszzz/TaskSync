@@ -19,7 +19,7 @@ export default function Projetos() {
       alert("Erro ao carregar dados");
     }
   };
-    const handlerDeletarProjeto = async (projeto: Projeto) => {
+  const handlerDeletarProjeto = async (projeto: Projeto) => {
     var dadosRetorno = await
       axios.delete('http://localhost:8080/projetos/' + projeto.id + '/excluir');
 
@@ -35,12 +35,16 @@ export default function Projetos() {
 
   }
 
-const handleAlterarStatusProjeto = async (projeto: Projeto) => {
+  const handleAlterarStatusProjeto = async (projeto: Projeto) => {
     var novoStatus = {};
-    if (projeto.status === "EXCLUIDO") {
-      novoStatus = { status: "BAIXA" }
+    if (projeto.status === "BAIXA") {
+      novoStatus = { status: "MEDIA" }
+    } else if (projeto.status === "MEDIA") {
+      novoStatus = { status: "ALTA" }
+    } else if (projeto.status === "ALTA") {
+      novoStatus = { status: "URGENTE" }
     } else {
-      novoStatus = { status: "EXCLUIDO" }
+      novoStatus = { status: "BAIXA" }
     }
 
     var dadosRetorno = await
@@ -88,19 +92,23 @@ const handleAlterarStatusProjeto = async (projeto: Projeto) => {
                   <td className="px-6 py-4 text-zinc-400 font-mono text-xs">{projeto.dataPrevistaFim}</td>
                   <td className="px-6 py-4 text-emerald-400 font-semibold text-xs">{projeto.status}</td>
                   <td className="px-6 py-4 text-emerald-400 font-semibold text-xs"><Link href={`/projeto/${projeto.id}/editar`} className="inline-flex items-center justify-center w-8 h-8 rounded-lg text-zinc-400 hover:text-amber-400 hover:bg-white/5 transition-colors"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg></Link>
-                  
-                  <button
-                    onClick={() => handlerDeletarProjeto(projeto)}
-                    className="px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors text-red-400 hover:text-white hover:bg-red-500/10">
-                    DELETAR
-                  </button>
 
-                  <button onClick={() => handleAlterarStatusProjeto(projeto)}
-                    className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-colors border ${projeto.status === 'EXCLUIDO'
-                      ? 'text-red-400 border-red-400/30 bg-red-400/10 hover:bg-red-400/20'
-                      : 'text-emerald-400 border-emerald-400/30 bg-emerald-400/10 hover:bg-emerald-400/20'}`
-                    }>
-                    {projeto.status}</button>
+                    <button
+                      onClick={() => handlerDeletarProjeto(projeto)}
+                      className="px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors text-red-400 hover:text-white hover:bg-red-500/10">
+                      DELETAR
+                    </button>
+
+                    <button onClick={() => handleAlterarStatusProjeto(projeto)}
+                      className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-colors border ${projeto.status === 'BAIXA'
+                        ? 'text-emerald-400 border-emerald-400/30 bg-emerald-400/10 hover:bg-emerald-400/20'
+                        : projeto.status === 'MEDIA'
+                          ? 'text-amber-400 border-amber-400/30 bg-amber-400/10 hover:bg-amber-400/20'
+                          : projeto.status === 'ALTA'
+                            ? 'text-orange-400 border-orange-400/30 bg-orange-400/10 hover:bg-orange-400/20'
+                            : 'text-red-400 border-red-400/30 bg-red-400/10 hover:bg-red-400/20'}`
+                      }>
+                      {projeto.status}</button>
                   </td>
                 </tr>
               ))}
