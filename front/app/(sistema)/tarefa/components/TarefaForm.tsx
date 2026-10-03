@@ -4,11 +4,15 @@ import { Tarefa, TarefaFormProps } from "../../types/tarefa";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import axios from "axios";
+// HOOKS: useState, useEffect, useRouter e useParams
+//Usestate: guardar um valor que muda ao longo do tempo e fazer a tela se atualizar automaticamente quando esse valor muda.
+// UseEffect: executar uma ação automaticamente quando o 
+// componente aparece na tela (ou quando algo específico muda), sem precisar de clique do usuário.
 
 export default function TarefaForm({ tarefaExistente }: TarefaFormProps) {
     const router = useRouter()
     //Valor Inicial
-    const [tarefa, setTarefa] = useState<Tarefa>
+    const [tarefa, setTarefa] = useState<Tarefa> 
         (tarefaExistente || new Tarefa(null, "", "", "", "ANDAMENTO"));
     //Atualiação Valor
     const handlerChange = (campo: 'titulo' | 'descricao' | 'dataPrazo', valor: string) => {

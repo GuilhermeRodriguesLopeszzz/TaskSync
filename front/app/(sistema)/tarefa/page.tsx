@@ -40,7 +40,7 @@ const handlerDeletarTarefa = async (tarefa: Tarefa) => {
   const handleAlterarStatusTarefa = async (tarefa: Tarefa) => {
     var novoStatus = {};
     if (tarefa.status === "ANDAMENTO") {
-      novoStatus = { status: "INTERROMPIDO" }
+      novoStatus = { status: "PENDENTE" }
     } else {
       novoStatus = { status: "ANDAMENTO" }
     }
