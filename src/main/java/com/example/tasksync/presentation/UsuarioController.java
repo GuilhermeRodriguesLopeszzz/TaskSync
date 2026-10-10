@@ -1,6 +1,8 @@
 package com.example.tasksync.presentation;
 
 import com.example.tasksync.application.dto.AtualizarStatusRquest;
+import com.example.tasksync.application.dto.CriarAdminRequest;
+import com.example.tasksync.application.dto.CriarAdminResponse;
 import com.example.tasksync.application.dto.UsuarioResponse;
 import com.example.tasksync.application.services.UsuarioService;
 import com.example.tasksync.domain.entities.EnumStatusUsuario;
@@ -33,13 +35,15 @@ public class UsuarioController {
     }
 
 
-    @PostMapping
-    @ResponseStatus(HttpStatus.CREATED)
-    @Operation (summary = "Metodo de criação de usuario", description = "Metodo responsavel em efetuar a criação de novos usuarios")
-    public ResponseEntity<Usuario> criar(@RequestBody Usuario usuario){
+    @PostMapping("/admin")
+    public ResponseEntity<CriarAdminResponse> criarAdmin(@RequestBody CriarAdminRequest criarAdminRequest){
 
-        var usuarioBanco = usuarioRepository.save(usuario);
-        return ResponseEntity.ok(usuarioBanco);
+        try {
+            CriarAdminResponse responseSalvar = usuarioService.criarAdmin(criarAdminRequest);
+            return ResponseEntity.ok(responseSalvar);
+        }catch (RuntimeException e){
+            return ResponseEntity.badRequest().build();
+        }
     }
 
     //Apartir de aqui

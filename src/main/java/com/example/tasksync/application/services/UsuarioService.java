@@ -1,12 +1,10 @@
 package com.example.tasksync.application.services;
 
-import com.example.tasksync.application.dto.LoginRequest;
-import com.example.tasksync.application.dto.LoginResponse;
-import com.example.tasksync.application.dto.UsuarioResponse;
+import com.example.tasksync.application.dto.*;
+import com.example.tasksync.domain.entities.Usuario;
 import com.example.tasksync.domain.repository.UsuarioRepository;
-import io.swagger.v3.oas.annotations.Operation;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.ResponseEntity;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -18,6 +16,9 @@ public class UsuarioService {
     private UsuarioRepository usuarioRepository;
     @Autowired
     private TokenService tokenService;
+
+    @Value("${spring.secret}")
+    private String secret;
 
     public LoginResponse validarUsuarioAutenticadoERetornaToken( LoginRequest loginRequest ){
 
@@ -40,4 +41,16 @@ public class UsuarioService {
                 .toList();
     }
 
+    public CriarAdminResponse criarAdmin(CriarAdminRequest criarAdminRequest) {
+
+        if(!criarAdminRequest.secretKey().equals(secret)){
+            return new CriarAdminResponse(0L,"Usuario Salvo com sucesso!");
+
+        }
+
+        Usuario usuarioAdminSalvar = new Usuario(criarAdminRequest);
+        usuarioRepository.save(usuarioAdminSalvar);
+
+        return new CriarAdminResponse(usuarioAdminSalvar.getId(),"Usuario Salvo com sucesso!");
+    }
 }

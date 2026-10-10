@@ -1,5 +1,6 @@
 package com.example.tasksync.domain.entities;
 
+import com.example.tasksync.application.dto.CriarAdminRequest;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -35,5 +36,16 @@ public class Usuario {
 
     private String email;
 
-    private EnumStatusUsuario status;
+    private String role = "ROLE_USER";
+
+    private EnumStatusUsuario status = EnumStatusUsuario.ATIVO;
+
+    public Usuario(CriarAdminRequest criarAdminRequest) {
+        this.setCpf(cpf);
+        this.setNome(nome);
+        this.setSenha(senha);
+        this.setEmail(email);
+
+        this.setRole("ROLE_ADMIN");
+    }
 }
