@@ -41,11 +41,10 @@ public class Usuario {
     private EnumStatusUsuario status = EnumStatusUsuario.ATIVO;
 
     public Usuario(CriarAdminRequest criarAdminRequest) {
-        this.setCpf(cpf);
-        this.setNome(nome);
-        this.setSenha(senha);
-        this.setEmail(email);
-
+        this.setCpf(criarAdminRequest.cpf());
+        this.setNome(criarAdminRequest.nome());
+        this.setSenha(criarAdminRequest.senha());
+        this.setEmail(criarAdminRequest.email());
         this.setRole("ROLE_ADMIN");
     }
 }

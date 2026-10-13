@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<AnchorPane prefHeight="400.0" prefWidth="600.0" xmlns="http://javafx.com/javafx/17.0.12" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.example.back.TipoProjetoController">
+   <children>
+      <Button layoutX="39.0" layoutY="347.0" mnemonicParsing="false" onAction="#voltar" text="Sair" />
+      <Button layoutX="517.0" layoutY="347.0" mnemonicParsing="false" onAction="#salvarTipoProjeto" text="Salvar" />
+      <Label layoutX="260.0" layoutY="79.0" text="Título" />
+      <Label layoutX="250.0" layoutY="157.0" text="Descrição" />
+      <TextField layoutX="133.0" layoutY="188.0" fx:id="txtNome" prefHeight="25.0" prefWidth="286.0" />
+      <TextField layoutX="133.0" layoutY="110.0" fx:id="txtDesc" prefHeight="25.0" prefWidth="286.0" />
+   </children>
+</AnchorPane>

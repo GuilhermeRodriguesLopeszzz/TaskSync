@@ -11,7 +11,6 @@ import com.example.tasksync.domain.repository.UsuarioRepository;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -38,12 +37,14 @@ public class UsuarioController {
     @PostMapping("/admin")
     public ResponseEntity<CriarAdminResponse> criarAdmin(@RequestBody CriarAdminRequest criarAdminRequest){
 
-        try {
-            CriarAdminResponse responseSalvar = usuarioService.criarAdmin(criarAdminRequest);
-            return ResponseEntity.ok(responseSalvar);
-        }catch (RuntimeException e){
+        try{
+            CriarAdminResponse respostaSalvar = usuarioService.criarAdmin(criarAdminRequest);
+            return ResponseEntity.ok(respostaSalvar);
+
+        } catch (RuntimeException e) {
             return ResponseEntity.badRequest().build();
         }
+
     }
 
     //Apartir de aqui

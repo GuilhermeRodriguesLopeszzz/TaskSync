@@ -1,15 +1,13 @@
 package com.example.tasksync.application.services;
 
 import com.example.tasksync.application.dto.*;
-import com.example.tasksync.domain.entities.Projeto;
-import com.example.tasksync.domain.entities.Usuario;
+import com.example.tasksync.domain.entities.TipoProjeto;
 import com.example.tasksync.domain.repository.ProjetoRepository;
-import com.example.tasksync.domain.repository.UsuarioRepository;
+import com.example.tasksync.domain.repository.TipoProjetoRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
-import java.util.List;
 @Service
 public class TipoProjetoService {
     @Autowired
@@ -18,18 +16,20 @@ public class TipoProjetoService {
 
     @Value("${spring.secret}")
     private String secret;
+    @Autowired
+    private TipoProjetoRepository tipoProjetoRepository;
 
 
-    public CriarAdminResponse criarAdmin(CriarAdminRequest criarAdminRequest) {
+    public CriarTipoProjetoResponse criarTipoProjeto(CriarTipoProjetoRequest criarTipoProjetoRequest) {
 
-        if(!criarAdminRequest.secretKey().equals(secret)){
-            return new CriarAdminResponse(0L,"Usuario Salvo com sucesso!");
+        if(!criarTipoProjetoRequest.secretKey().equals(secret)){
+            return new CriarTipoProjetoResponse(0L,"Tipo projeto salvo com sucesso!");
 
         }
 
-        Projeto tipoProjetoSalvar = new Projeto(criarAdminRequest);
-        projetoRepository.save(tipoProjetoSalvar);
+        TipoProjeto tipoProjetoSalvar = new TipoProjeto(criarTipoProjetoRequest);
+        tipoProjetoRepository.save(tipoProjetoSalvar);
 
-        return new CriarAdminResponse(tipoProjetoSalvar.getId(),"Tipo projeto salvo com sucesso!");
+        return new CriarTipoProjetoResponse(tipoProjetoSalvar.getId(),"Tipo projeto salvo com sucesso!");
     }
 }

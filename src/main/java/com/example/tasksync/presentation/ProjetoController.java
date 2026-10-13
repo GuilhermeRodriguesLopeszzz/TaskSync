@@ -1,6 +1,9 @@
 package com.example.tasksync.presentation;
 
 import com.example.tasksync.application.dto.AtualizarStatusRequestProjeto;
+import com.example.tasksync.application.dto.CriarTipoProjetoRequest;
+import com.example.tasksync.application.dto.CriarTipoProjetoResponse;
+import com.example.tasksync.application.services.TipoProjetoService;
 import com.example.tasksync.domain.entities.EnumStatusProjeto;
 import com.example.tasksync.domain.entities.Projeto;
 import com.example.tasksync.domain.repository.ProjetoRepository;
