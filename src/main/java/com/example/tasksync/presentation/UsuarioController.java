@@ -23,6 +23,7 @@ public class UsuarioController {
     private UsuarioService usuarioService;
 
     @GetMapping
+    @Operation(summary = "Metodo de consulta de usuario", description = "Metodo responsavel em efetuar a busca de todos os usuarios")
     public ResponseEntity<List<UsuarioResponse>> listarTodos(){
 
         return  ResponseEntity.ok(usuarioService.ListarTodosUsuariosTable());
@@ -30,6 +31,7 @@ public class UsuarioController {
 
 
     @PostMapping("/admin")
+    @Operation (summary = "Metodo de criação de admin", description = "Metodo responsavel em efetuar a criação de admins")
     public ResponseEntity<CriarAdminResponse> criarAdmin(@RequestBody CriarAdminRequest criarAdminRequest){
 
         try{
@@ -56,6 +58,7 @@ public class UsuarioController {
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
+    @Operation (summary = "Metodo de criação de usuario", description = "Metodo responsavel em efetuar a criação de novos usuarios")
     public ResponseEntity<?> criar(@RequestBody UsuarioRequest usuario){
 
         try {
