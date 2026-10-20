@@ -1,10 +1,10 @@
 package com.example.tasksync.domain.entities;
 
 import com.example.tasksync.application.dto.CriarAdminRequest;
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
+import com.example.tasksync.application.dto.EnumStatusUsuario;
+import com.example.tasksync.application.dto.UsuarioRequest;
+import com.example.tasksync.domain.valueobject.CPF;
+import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -24,13 +24,15 @@ import lombok.NoArgsConstructor;
 
 public class Usuario {
 
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     private String nome;
 
-    private String cpf;
+    @Embedded
+    private CPF cpf;
 
     private String senha;
 
@@ -40,11 +42,27 @@ public class Usuario {
 
     private EnumStatusUsuario status = EnumStatusUsuario.ATIVO;
 
+    public void setEmail(String email) {
+        if(!email.isEmpty() && !email.contains("@")){
+            throw new IllegalArgumentException("Email Invalido!");
+        }
+        this.email = email;
+    }
+
     public Usuario(CriarAdminRequest criarAdminRequest) {
-        this.setCpf(criarAdminRequest.cpf());
+        this.setCpf(new CPF(criarAdminRequest.cpf()));
         this.setNome(criarAdminRequest.nome());
         this.setSenha(criarAdminRequest.senha());
         this.setEmail(criarAdminRequest.email());
         this.setRole("ROLE_ADMIN");
+
+    }
+
+    public Usuario(UsuarioRequest usuario) {
+        this.setCpf(new CPF(usuario.cpf()));
+        this.setNome(usuario.nome());
+        this.setSenha(usuario.senha());
+        this.setEmail(usuario.email());
+        this.setRole("ROLE_USER");
     }
 }

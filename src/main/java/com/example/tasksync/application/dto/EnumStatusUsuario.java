@@ -1,4 +1,4 @@
-package com.example.tasksync.domain.entities;
+package com.example.tasksync.application.dto;
 
 public enum EnumStatusUsuario {
     ATIVO,

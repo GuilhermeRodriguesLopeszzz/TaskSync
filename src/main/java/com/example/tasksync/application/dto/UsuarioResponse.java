@@ -1,6 +1,5 @@
 package com.example.tasksync.application.dto;
 
-import com.example.tasksync.domain.entities.EnumStatusUsuario;
 import com.example.tasksync.domain.entities.Usuario;
 
 public record UsuarioResponse(Long id, String nome, String cpf, String email, EnumStatusUsuario status) {
@@ -11,7 +10,7 @@ public record UsuarioResponse(Long id, String nome, String cpf, String email, En
 
                 usuarioEntidade.getId(),
                 usuarioEntidade.getNome(),
-                usuarioEntidade.getCpf(),
+                usuarioEntidade.getCpf().toString(),
                 usuarioEntidade.getEmail(),
                 usuarioEntidade.getStatus()
 
