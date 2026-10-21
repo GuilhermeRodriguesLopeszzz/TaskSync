@@ -1,7 +1,6 @@
 package com.example.tasksync.presentation;
 
 import com.example.tasksync.application.dto.LoginRequest;
-import com.example.tasksync.application.dto.LoginResponse;
 import com.example.tasksync.application.services.TokenService;
 import com.example.tasksync.application.services.UsuarioService;
 import io.swagger.v3.oas.annotations.Operation;

@@ -1,9 +1,9 @@
 package com.example.tasksync.domain.entities;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
+import com.example.tasksync.application.dto.DesenvolvedorRequest;
+import com.example.tasksync.application.dto.EnumStatusDesenvolvedor;
+import com.example.tasksync.domain.valueobject.CPF;
+import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -23,12 +23,27 @@ public class Desenvolvedor {
 
         private String nome;
 
-        private String cpf;
+        @Embedded
+        private CPF cpf;
 
         private String senha;
 
         private String email;
 
-        private EnumStatusDesenvolvedor status;
+        private EnumStatusDesenvolvedor status = EnumStatusDesenvolvedor.ATIVO;
+
+        public void setEmail(String email) {
+                if (email != null && !email.isEmpty() && !email.contains("@")) {
+                        throw new IllegalArgumentException("Email Invalido!");
+                }
+                this.email = email;
+        }
+
+        public Desenvolvedor(DesenvolvedorRequest desenvolvedor) {
+                this.setCpf(new CPF(desenvolvedor.cpf()));
+                this.setNome(desenvolvedor.nome());
+                this.setSenha(desenvolvedor.senha());
+                this.setEmail(desenvolvedor.email());
+        }
 
 }

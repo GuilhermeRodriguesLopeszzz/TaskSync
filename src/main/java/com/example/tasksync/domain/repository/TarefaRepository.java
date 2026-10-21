@@ -1,6 +1,6 @@
 package com.example.tasksync.domain.repository;
 
-import com.example.tasksync.domain.entities.EnumStatusTarefa;
+import com.example.tasksync.application.dto.EnumStatusTarefa;
 import com.example.tasksync.domain.entities.Tarefa;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;

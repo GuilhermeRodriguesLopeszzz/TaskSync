@@ -1,12 +1,10 @@
 package com.example.tasksync.presentation;
 
 import com.example.tasksync.application.dto.AtualizarStatusRequestProjeto;
-import com.example.tasksync.application.dto.CriarTipoProjetoRequest;
-import com.example.tasksync.application.dto.CriarTipoProjetoResponse;
-import com.example.tasksync.application.services.TipoProjetoService;
-import com.example.tasksync.domain.entities.EnumStatusProjeto;
-import com.example.tasksync.domain.entities.Projeto;
-import com.example.tasksync.domain.repository.ProjetoRepository;
+import com.example.tasksync.application.dto.EnumStatusProjeto;
+import com.example.tasksync.application.dto.ProjetoRequest;
+import com.example.tasksync.application.dto.ProjetoResponse;
+import com.example.tasksync.application.services.ProjetoService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -14,81 +12,76 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 @RestController
 @RequestMapping("/projetos")
-@Tag(name="Projeto", description = "Grupo de APIs responsavel por controlar a estrutura de crição e consulta de projetos do sistema!")
+@Tag(name = "Projeto", description = "Grupo de APIs responsavel por controlar a estrutura de criação e consulta de projetos do sistema!")
 public class ProjetoController {
 
     @Autowired
-    private ProjetoRepository projetoRepository;
+    private ProjetoService projetoService;
 
     @GetMapping
-    @Operation(summary = "Metodo de consulta de lista de projeto", description = "Metodo responsavel em efetuar a consulta de todas os projetos sem filtro")
-    public ResponseEntity<?> ListarTodos(){
+    @Operation(summary = "Metodo de consulta de lista de projeto", description = "Metodo responsavel em efetuar a consulta de todos os projetos sem filtro")
+    public ResponseEntity<List<ProjetoResponse>> listarTodos() {
 
-        return ResponseEntity.ok(projetoRepository.findAll());
+        return ResponseEntity.ok(projetoService.listarTodosProjetos());
     }
 
     @PostMapping
-    @ResponseStatus(HttpStatus.CREATED)
-    @Operation (summary = "Metodo de criação de projeto", description = "Metodo responsavel em efetuar a criação de novos projetos")
-    public ResponseEntity<Projeto> criar(@RequestBody Projeto projeto){
+    @Operation(summary = "Metodo de criação de projeto", description = "Metodo responsavel em efetuar a criação de novos projetos")
+    public ResponseEntity<?> criar(@RequestBody ProjetoRequest projeto) {
 
-        var projetoBanco = projetoRepository.save(projeto);
-        return ResponseEntity.ok(projetoBanco);
+        try {
+            ProjetoResponse projetoBanco = projetoService.salvarProjeto(projeto, 0L);
+            return ResponseEntity.status(HttpStatus.CREATED).body(projetoBanco);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
     }
-//
+
     @GetMapping("/{id}")
-    @Operation(summary = "Metodo de consulta de projeto por id", description = "Metodo responsavel em efetuar a busca de um projeto especifica atraves do seu id")
-    public ResponseEntity<Projeto> buscarPorId(@PathVariable Long id){
-        Projeto projetoBanco = projetoRepository.findById(id).orElse(null);
-        if (projetoBanco != null){
+    @Operation(summary = "Metodo de consulta de projeto por id", description = "Metodo responsavel em efetuar a busca de um projeto especifico atraves do seu id")
+    public ResponseEntity<ProjetoResponse> buscarPorId(@PathVariable Long id) {
+        ProjetoResponse projetoBanco = projetoService.buscarPorId(id);
+        if (projetoBanco != null) {
             return ResponseEntity.ok(projetoBanco);
         }
         return ResponseEntity.notFound().build();
     }
 
     @PatchMapping("/{id}/status")
-    @Operation(summary = "Metodo de atualização de status do projeto", description = "Metodo responsavel em atualizar apenas o status de uma desenvolvedor especifico")
-    public ResponseEntity<Void> atualizarStatus(@PathVariable Long id, @RequestBody AtualizarStatusRequestProjeto statusRequest){
+    @Operation(summary = "Metodo de atualização de status do projeto", description = "Metodo responsavel em atualizar apenas o status de um projeto especifico")
+    public ResponseEntity<Void> atualizarStatus(@PathVariable Long id, @RequestBody AtualizarStatusRequestProjeto statusRequest) {
+        var atualizou = projetoService.atualizarStatus(statusRequest.status(), id);
 
-        Projeto projetoBanco = projetoRepository.findById(id).orElse(null);
-        if (projetoBanco != null){
-            projetoBanco.setStatus(statusRequest.status());
-            projetoRepository.save(projetoBanco);
+        if (atualizou) {
             return ResponseEntity.ok().build();
         }
         return ResponseEntity.notFound().build();
     }
 
     @PutMapping("/{id}")
-    @Operation(summary = "Metodo de atualização de Projeto", description = "Metodo responsavel em atualizar todos os dados de uma Projeto existente")
-    public ResponseEntity<Projeto> atualizarProjeto(@PathVariable Long id, @RequestBody Projeto projeto){
-
+    @Operation(summary = "Metodo de atualização de projeto", description = "Metodo responsavel em atualizar todos os dados de um projeto existente")
+    public ResponseEntity<?> atualizarProjeto(@PathVariable Long id, @RequestBody ProjetoRequest projeto) {
         try {
-            Projeto projetoBanco = projetoRepository.findById(id).orElse(null);
-            if (projetoBanco != null){
-                projetoBanco.setStatus(projeto.getStatus());
-                projetoBanco.setNome(projeto.getNome());
-                projetoBanco.setDescricao(projeto.getDescricao());
-                projetoBanco.setDataInicio(projeto.getDataInicio());
-                projetoBanco.setDataPrevistaFim(projeto.getDataPrevistaFim());
-                projetoRepository.save(projetoBanco);
-                return ResponseEntity.ok().build();
+            ProjetoResponse projetoBanco = projetoService.salvarProjeto(projeto, id);
+            if (projetoBanco != null) {
+                return ResponseEntity.ok(projetoBanco);
             }
             return ResponseEntity.notFound().build();
-        }catch (Exception e){
-            throw new RuntimeException(e);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
 
     @DeleteMapping("/{id}/excluir")
     @Operation(summary = "Metodo de exclusão de projeto", description = "Metodo responsavel em efetuar a exclusão logica de um projeto, alterando seu status para EXCLUIDO")
-    public ResponseEntity<Void> excluir(@PathVariable Long id){
-        Projeto projetoBanco = projetoRepository.findById(id).orElse(null);
-        if (projetoBanco != null){
-            projetoBanco.setStatus(EnumStatusProjeto.EXCLUIDO);
-            projetoRepository.save(projetoBanco);
+    public ResponseEntity<Void> excluir(@PathVariable Long id) {
+        var atualizou = projetoService.atualizarStatus(EnumStatusProjeto.EXCLUIDO, id);
+
+        if (atualizou) {
             return ResponseEntity.ok().build();
         }
         return ResponseEntity.notFound().build();

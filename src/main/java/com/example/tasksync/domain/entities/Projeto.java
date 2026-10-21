@@ -1,6 +1,7 @@
 package com.example.tasksync.domain.entities;
 
-import com.example.tasksync.application.dto.CriarTipoProjetoRequest;
+import com.example.tasksync.application.dto.EnumStatusProjeto;
+import com.example.tasksync.application.dto.ProjetoRequest;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -29,10 +30,18 @@ public class Projeto {
 
     private String descricao;
 
-    private EnumStatusProjeto status;
+    // troque ATIVO pelo valor inicial do seu enum
+    private EnumStatusProjeto status = EnumStatusProjeto.MEDIA;
 
     private LocalDate dataInicio;
 
     private LocalDate dataPrevistaFim;
+
+    public Projeto(ProjetoRequest projeto) {
+        this.setNome(projeto.nome());
+        this.setDescricao(projeto.descricao());
+        this.setDataInicio(projeto.dataInicio());
+        this.setDataPrevistaFim(projeto.dataPrevistaFim());
+    }
 
 }

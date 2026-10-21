@@ -1,5 +1,9 @@
 package com.example.tasksync.domain.entities;
 
+import com.example.tasksync.application.dto.EnumStatusTarefa;
+import com.example.tasksync.application.dto.TarefaRequest;
+import com.example.tasksync.application.dto.UsuarioRequest;
+import com.example.tasksync.domain.valueobject.CPF;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -29,6 +33,13 @@ public class Tarefa {
 
         private LocalDate dataPrazo;
 
-        private EnumStatusTarefa status;
+        private EnumStatusTarefa status = EnumStatusTarefa.PENDENTE;
+
+        public Tarefa(TarefaRequest tarefa) {
+                this.setTitulo(tarefa.titulo());
+                this.setDescricao(tarefa.descricao());
+                this.setDataPrazo(tarefa.dataPrazo());
+        }
+
     }
 
