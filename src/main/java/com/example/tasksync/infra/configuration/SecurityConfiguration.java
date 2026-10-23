@@ -29,6 +29,9 @@ public class SecurityConfiguration {
                                 "/swagger-resources/**",
                                 "/v3/api-docs/**"
                         ).permitAll()
+                        //libera rotas do admin
+                        .requestMatchers("/usuarios/**")
+                        .hasRole("ADMIN")
                         .anyRequest().authenticated()
                 )
                 .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class)

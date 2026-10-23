@@ -42,9 +42,11 @@ public class JwtFilter extends OncePerRequestFilter {
 
             try {
                 var usuarioLogado = tokenService.verificarToken(token);
-                var user = new UsernamePasswordAuthenticationToken(usuarioLogado.getSubject(),
+                var user = new UsernamePasswordAuthenticationToken(
+                        usuarioLogado,
                         null,
-                        List.of());
+                        usuarioLogado.authorities()
+                );
                 SecurityContextHolder.getContext().setAuthentication(user);
             }catch (Exception e){
 
