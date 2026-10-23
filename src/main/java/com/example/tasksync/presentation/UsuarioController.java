@@ -2,8 +2,6 @@ package com.example.tasksync.presentation;
 
 import com.example.tasksync.application.dto.*;
 import com.example.tasksync.application.services.UsuarioService;
-import com.example.tasksync.domain.entities.Usuario;
-import com.example.tasksync.domain.repository.UsuarioRepository;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;

@@ -16,8 +16,6 @@ public class AuthController {
 
 
     @Autowired
-    private TokenService tokenService;
-    @Autowired
     private UsuarioService usuarioService;
 
 

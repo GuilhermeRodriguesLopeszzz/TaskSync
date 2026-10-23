@@ -6,6 +6,7 @@ import com.example.tasksync.domain.repository.UsuarioRepository;
 import com.example.tasksync.domain.valueobject.CPF;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -26,11 +27,14 @@ public class UsuarioService {
 
         if(usuarioRepository.existsUsuarioByEmailAndSenha(loginRequest.email(), loginRequest.senha())){
 
-            //gerar token está diferente que o do professor
-            var token = tokenService.gerarToken(loginRequest.email());
+            var token = tokenService.gerarToken(loginRequest);
             return new LoginResponse(token);
         }
         return null;
+    }
+
+    public UsuarioLogado getUsuarioLogado() {
+        return (UsuarioLogado) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
     }
 
 
