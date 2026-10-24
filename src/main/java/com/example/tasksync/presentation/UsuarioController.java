@@ -42,6 +42,19 @@ public class UsuarioController {
 
     }
 
+    @PostMapping("/dev")
+    @Operation (summary = "Metodo de criação de desenvolvedor", description = "Metodo responsavel em efetuar a criação de usuarios com perfil de desenvolvedor")
+    public ResponseEntity<CriarDevResponse> criarDev(@RequestBody CriarDevRequest criarDevRequest){
+
+        try{
+            CriarDevResponse respostaSalvar = usuarioService.criarDev(criarDevRequest);
+            return ResponseEntity.ok(respostaSalvar);
+
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().build();
+        }
+    }
+
     //Apartir de aqui
 
     @GetMapping("/{id}")

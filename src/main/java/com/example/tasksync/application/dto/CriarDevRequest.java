@@ -1,0 +1,4 @@
+package com.example.tasksync.application.dto;
+
+public record CriarDevRequest(String nome,String email,String senha,String cpf) {
+}

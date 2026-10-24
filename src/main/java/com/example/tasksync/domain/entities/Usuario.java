@@ -1,9 +1,6 @@
 package com.example.tasksync.domain.entities;
 
-import com.example.tasksync.application.dto.CriarAdminRequest;
-import com.example.tasksync.application.dto.EnumStatusUsuario;
-import com.example.tasksync.application.dto.UsuarioLogado;
-import com.example.tasksync.application.dto.UsuarioRequest;
+import com.example.tasksync.application.dto.*;
 import com.example.tasksync.domain.valueobject.CPF;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
@@ -49,6 +46,12 @@ public class Usuario implements UserDetails {
 
     private String role = "ROLE_USER";
 
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "empresa_id",referencedColumnName = "id")
+    private Empresa empresa;
+
+    //private EnumRole role = EnumRole.ROLE_USER;
+
     private EnumStatusUsuario status = EnumStatusUsuario.ATIVO;
 
     public void setEmail(String email) {
@@ -73,6 +76,14 @@ public class Usuario implements UserDetails {
         this.setSenha(usuario.senha());
         this.setEmail(usuario.email());
         this.setRole("ROLE_USER");
+    }
+
+    public Usuario(CriarDevRequest usuarioDev) {
+        this.setCpf(new CPF(usuarioDev.cpf()));
+        this.setNome(usuarioDev.nome());
+        this.setSenha(usuarioDev.senha());
+        this.setEmail(usuarioDev.email());
+        this.setRole("ROLE_DEV");
     }
 
 

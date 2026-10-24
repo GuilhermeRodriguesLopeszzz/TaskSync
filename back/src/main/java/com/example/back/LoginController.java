@@ -14,7 +14,7 @@ import java.io.IOException;
 
 
 public class LoginController {
-    private String key = "psadfmdfmsapkpdafmspk";
+    private String key = " ";
 
     @FXML
     private TextField txtkey;

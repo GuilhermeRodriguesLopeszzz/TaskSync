@@ -60,7 +60,9 @@ public class ProjetoService {
 
     public boolean atualizarStatus(EnumStatusProjeto status, Long id) {
 
+
         Projeto projetoBanco = projetoRepository.findById(id).orElse(null);
+
         if (projetoBanco != null) {
             projetoBanco.setStatus(status);
             projetoRepository.save(projetoBanco);

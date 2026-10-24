@@ -4,15 +4,13 @@ import com.example.tasksync.application.dto.EnumStatusTarefa;
 import com.example.tasksync.application.dto.TarefaRequest;
 import com.example.tasksync.application.dto.UsuarioRequest;
 import com.example.tasksync.domain.valueobject.CPF;
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
+import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDate;
+import java.util.List;
 
 @Entity
 //Get and Setters
@@ -34,6 +32,10 @@ public class Tarefa {
         private LocalDate dataPrazo;
 
         private EnumStatusTarefa status = EnumStatusTarefa.PENDENTE;
+
+        @ManyToOne
+        @JoinColumn(name = "projeto_id")
+        private Projeto projeto;
 
         public Tarefa(TarefaRequest tarefa) {
                 this.setTitulo(tarefa.titulo());

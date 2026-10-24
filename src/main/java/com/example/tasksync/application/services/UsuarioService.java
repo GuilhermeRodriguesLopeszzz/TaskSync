@@ -2,6 +2,7 @@ package com.example.tasksync.application.services;
 
 import com.example.tasksync.application.dto.*;
 import com.example.tasksync.domain.entities.Usuario;
+import com.example.tasksync.domain.repository.EmpresaRepository;
 import com.example.tasksync.domain.repository.UsuarioRepository;
 import com.example.tasksync.domain.valueobject.CPF;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -16,6 +17,10 @@ public class UsuarioService {
 
     @Autowired
     private UsuarioRepository usuarioRepository;
+
+    @Autowired
+    private EmpresaRepository empresaRepository;
+
     @Autowired
     private TokenService tokenService;
 
@@ -40,7 +45,16 @@ public class UsuarioService {
 
     public List<UsuarioResponse> ListarTodosUsuariosTable(){
 
-        return usuarioRepository.findAll()
+        var usuarioLogado = getUsuarioLogado();
+
+        if(usuarioLogado.empresa_id() ==null){
+            return  usuarioRepository.findAll()
+                    .stream()
+                    .map(UsuarioResponse::new)
+                    .toList();
+        }
+
+        return  usuarioRepository.getUsuariosByEmpresa_Id(usuarioLogado.empresa_id())
                 .stream()
                 .map(UsuarioResponse::new)
                 .toList();
@@ -75,6 +89,7 @@ public class UsuarioService {
                 usuarioBanco.setCpf(new CPF(usuario.cpf()));
                 usuarioBanco.setEmail(usuario.email());
                 usuarioBanco.setSenha(usuario.senha());
+                //usuarioBanco.setEmpresa(usuario.empresaId());
                 usuarioRepository.save(usuarioBanco);
                 return  new UsuarioResponse(usuarioBanco);
             }
@@ -82,6 +97,14 @@ public class UsuarioService {
         }
 
         return null;
+    }
+
+    public CriarDevResponse criarDev(CriarDevRequest criarDevRequest) {
+
+        Usuario usuarioDevSalvar = new Usuario(criarDevRequest);
+        usuarioRepository.save(usuarioDevSalvar);
+
+        return new CriarDevResponse(usuarioDevSalvar.getId(),"Usuario Salvo com sucesso!");
     }
 
     public UsuarioResponse buscarPorId(Long id) {

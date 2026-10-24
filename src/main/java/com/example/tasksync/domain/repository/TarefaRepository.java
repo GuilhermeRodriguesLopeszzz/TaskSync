@@ -10,6 +10,9 @@ import java.util.Optional;
 
 @Repository
 public interface TarefaRepository extends JpaRepository<Tarefa, Long> {
-   //? boolean existsTarefaByEmailAndSenha(String email, String senha);
+
     Optional<List<Tarefa>> findByStatusNot(EnumStatusTarefa status);
+
+    List<Tarefa> findByProjetoIdAndStatus(Long projetoId, EnumStatusTarefa status);
+
 }
