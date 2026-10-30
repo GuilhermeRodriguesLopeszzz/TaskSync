@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Projeto, ProjetoFormProps } from "../../types/projeto";
 import axios from "axios";
+import { atualizarProjeto, salvarProjeto } from "@/app/services/projetoService";
 
 export default function ProjetoForm({ projetoExistente }: ProjetoFormProps) {
 
@@ -27,33 +28,31 @@ export default function ProjetoForm({ projetoExistente }: ProjetoFormProps) {
         )
     };
 
-    const handlerSalvar = async (formData: FormData) => {
+const handlerSalvar = async (formData: FormData) => {
 
-        if (projetoExistente) {
-
-            var dadosRetorno = await axios.put<number>("http://localhost:8080/projetos/" + projeto.id, projeto)
-            if (dadosRetorno.status == 200) {
-                alert("Projeto foi salvo com sucesso!")
-
-            } else {
-                alert(dadosRetorno.data);
-                return;
-            }
-            router.push("/projeto")
-
+    if (projetoExistente) {
+        var dadosRetorno = await atualizarProjeto(projeto);
+        if (dadosRetorno) {
+            alert("Projeto foi salvo com sucesso!");
         } else {
+            alert("Erro ao atualizar Projeto!");
 
-            var dadosRetorno = await axios.post<number>("http://localhost:8080/projetos", projeto)
-            if (dadosRetorno.status == 200) {
-                alert("Projeto foi salvo com sucesso!")
+            return;
+        }
 
-            } else {
-                alert(dadosRetorno.data);
-                return;
-            }
-            router.push("/projeto")
+    } else {
+        var dadosRetorno = await salvarProjeto(projeto);
+        if (dadosRetorno) {
+            alert("Projeto foi salvo com sucesso!");
+        } else {
+            alert("Erro ao salvar Projeto!");
+
+            return;
         }
     }
+
+    router.push("/projeto");
+}
 
     return (
         <form action={handlerSalvar}>

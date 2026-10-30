@@ -3,6 +3,7 @@ import Link from "next/link";
 import { Projeto } from "../types/projeto";
 import { useEffect, useState } from "react";
 import axios from "axios";
+import { atualizarStatusProjeto, buscarListaProjetos, deletarProjeto } from "@/app/services/projetoService";
 
 export default function Projetos() {
   const [projetos, setProjetos] = useState<Projeto[]>([]);
@@ -12,55 +13,36 @@ export default function Projetos() {
   }, []);
 
   const carregarDados = async () => {
-    try {
-      const dados = await axios.get<Projeto[]>("http://localhost:8080/projetos");
-      setProjetos(dados.data);
-    } catch (error) {
-      alert("Erro ao carregar dados");
-    }
-  };
-  const handlerDeletarProjeto = async (projeto: Projeto) => {
-    var dadosRetorno = await
-      axios.delete('http://localhost:8080/projetos/' + projeto.id + '/excluir');
+  try {
+    const dados = await buscarListaProjetos();
+    setProjetos(dados);
+  } catch (error) {
+    alert("Erro ao carregar dados");
+  }
+};
 
-    if (dadosRetorno.status == 200) {
-      alert("Excluido com sucesso!");
-    } else {
-      alert(dadosRetorno.data);
+const handlerDeletarProjeto = async (projeto: Projeto) => {
+  var dadosRetorno = await deletarProjeto(projeto.id || 0);
 
-      return;
-    }
+  if (dadosRetorno == 200) {
+    alert("Excluido com sucesso!");
+  } else {
+    alert("Erro ao excluir o projeto");
 
-    carregarDados();
-
+    return;
   }
 
-  const handleAlterarStatusProjeto = async (projeto: Projeto) => {
-    var novoStatus = {};
-    if (projeto.status === "BAIXA") {
-      novoStatus = { status: "MEDIA" }
-    } else if (projeto.status === "MEDIA") {
-      novoStatus = { status: "ALTA" }
-    } else if (projeto.status === "ALTA") {
-      novoStatus = { status: "URGENTE" }
-    } else {
-      novoStatus = { status: "BAIXA" }
-    }
+  carregarDados();
 
-    var dadosRetorno = await
-      axios.patch('http://localhost:8080/projetos/' + projeto.id + '/status', novoStatus);
+}
 
-    if (dadosRetorno.status == 200) {
-      alert("Atulizado status com sucesso!");
-    } else {
-      alert(dadosRetorno.data);
+const handleAlterarStatusProjeto = async (projeto: Projeto) => {
 
-      return;
-    }
+  await atualizarStatusProjeto(projeto);
 
-    carregarDados();
+  carregarDados();
 
-  }
+}
   return (
     <div className="min-h-screen w-full bg-[#0a0a0f] px-6 py-10 md:px-10 md:py-14">
       <div className="max-w-7xl mx-auto flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-10">

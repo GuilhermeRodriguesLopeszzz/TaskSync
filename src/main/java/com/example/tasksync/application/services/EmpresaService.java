@@ -33,7 +33,7 @@ public class EmpresaService {
                 empresaBanco.setCnpj(empresa.cnpj());
                 empresaBanco.setNomeFantasia(empresa.nomeFantasia());
                 //usuarioBanco.setEmpresa_id(usuarioLogado.empresa_id());
-                empresaBanco.save(empresaBanco);
+                empresaRepository.save(empresaBanco);
                 return  new EmpresaResponse(empresaBanco);
             }
 

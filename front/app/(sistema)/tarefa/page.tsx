@@ -3,6 +3,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import axios from "axios";
 import { Tarefa } from "../types/tarefa";
+import { atualizarStatusTarefa, buscarListaTarefas, deletarTarefa } from "@/app/services/tarefaService";
 
 export default function Tarefas() {
 
@@ -13,51 +14,35 @@ useEffect(() => {
 }, []);
 
 const carregarDados = async () => {
-  try {
-    const dados = await axios.get<Tarefa[]>("http://localhost:8080/tarefa");
-    setTarefas(dados.data);
-  } catch (error) {
-    alert("Erro ao carregar dados");
-  }
-};
-
-const handlerDeletarTarefa = async (tarefa: Tarefa) => {
-    var dadosRetorno = await
-      axios.delete('http://localhost:8080/tarefa/' + tarefa.id + '/excluir');
-
-    if (dadosRetorno.status == 200) {
+    try {
+      const dados = await buscarListaTarefas();
+      setTarefas(dados);
+    } catch (error) {
+      alert("Erro ao carregar dados");
+    }
+  };
+ 
+  const handlerDeletarTarefa = async (tarefa: Tarefa) => {
+    var dadosRetorno = await deletarTarefa(tarefa.id || 0);
+ 
+    if (dadosRetorno == 200) {
       alert("Excluido com sucesso!");
     } else {
-      alert(dadosRetorno.data);
-
+      alert("Erro ao excluir a tarefa");
+ 
       return;
     }
-
+ 
     carregarDados();
-
+ 
   }
-
+ 
   const handleAlterarStatusTarefa = async (tarefa: Tarefa) => {
-    var novoStatus = {};
-    if (tarefa.status === "ANDAMENTO") {
-      novoStatus = { status: "PENDENTE" }
-    } else {
-      novoStatus = { status: "ANDAMENTO" }
-    }
-
-    var dadosRetorno = await
-      axios.patch('http://localhost:8080/tarefa/' + tarefa.id + '/status', novoStatus);
-
-    if (dadosRetorno.status == 200) {
-      alert("Atulizado status com sucesso!");
-    } else {
-      alert(dadosRetorno.data);
-
-      return;
-    }
-
+ 
+    await atualizarStatusTarefa(tarefa);
+ 
     carregarDados();
-
+ 
   }
     return (
 <div className="min-h-screen w-full bg-[#0a0a0f] px-6 py-10 md:px-10 md:py-14">

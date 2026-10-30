@@ -2,7 +2,8 @@
 import Link from "next/link";
 import { useState, useEffect } from "react";
 import { Desenvolvedor } from "../types/desenvolvedor";
-import axios from "axios";
+import { atualizarStatusDesenvolvedor, buscarListaDesenvolvedores, deletarDesenvolvedor } from "@/app/services/desenvolvedorService";
+
 
 export default function Desenvolvedores() {
 
@@ -12,50 +13,33 @@ useEffect(() => {
   carregarDados();
 }, []);
 
-const carregarDados = async () => {
-  try {
-    const dados = await axios.get<Desenvolvedor[]>("http://localhost:8080/desenvolvedor");
-    setDesenvolvedores(dados.data);
-  } catch (error) {
-    alert("Erro ao carregar dados");
-  }
-};
-
- const handlerDeletarDesenvolvedor = async (desenvolvedor: Desenvolvedor) => {
-    var dadosRetorno = await
-      axios.delete('http://localhost:8080/desenvolvedor/' + desenvolvedor.id + '/excluir');
-
-    if (dadosRetorno.status == 200) {
+  const carregarDados = async () => {
+    try {
+      const dados = await buscarListaDesenvolvedores();
+      setDesenvolvedores(dados);
+    } catch (error) {
+      alert("Erro ao carregar dados");
+    }
+  };
+ 
+  const handlerDeletarDesenvolvedor = async (desenvolvedor: Desenvolvedor) => {
+    var dadosRetorno = await deletarDesenvolvedor(desenvolvedor.id || 0);
+ 
+    if (dadosRetorno == 200) {
       alert("Excluido com sucesso!");
     } else {
-      alert(dadosRetorno.data);
-
+      alert("Erro ao excluir o desenvolvedor");
+ 
       return;
     }
-
+ 
     carregarDados();
-  }
+  };
+ 
   const handleAlterarStatusDesenvolvedor = async (desenvolvedor: Desenvolvedor) => {
-    var novoStatus = {};
-    if (desenvolvedor.status === "ATIVO") {
-      novoStatus = { status: "BLOQUEADO" }
-    } else {
-      novoStatus = { status: "ATIVO" }
-    }
-
-    var dadosRetorno = await
-      axios.patch('http://localhost:8080/desenvolvedor/' + desenvolvedor.id + '/status', novoStatus);
-
-    if (dadosRetorno.status == 200) {
-      alert("Atulizado status com sucesso!");
-    } else {
-      alert(dadosRetorno.data);
-
-      return;
-    }
-
+    await atualizarStatusDesenvolvedor(desenvolvedor);
+ 
     carregarDados();
-
   }
     return (
 <div className="min-h-screen w-full bg-[#0a0a0f] px-6 py-10 md:px-10 md:py-14">

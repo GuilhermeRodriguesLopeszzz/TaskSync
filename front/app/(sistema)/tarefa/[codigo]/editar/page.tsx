@@ -6,6 +6,7 @@ import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { Tarefa } from "@/app/(sistema)/types/tarefa";
 import axios from "axios";
+import { consultaTarefaPorId } from "@/app/services/tarefaService";
 
 export default function EditarTarefa(){
     const parametro = useParams();
@@ -22,10 +23,11 @@ export default function EditarTarefa(){
 }, []);
 
 const buscarDados = async()=>{
-    const valorTarefaBack = await axios.get<Tarefa>("http://localhost:8080/tarefa/"+codigo)
 
-    if (valorTarefaBack.status==200){
-        setTarefa(valorTarefaBack.data);
+    const valorTarefaBack = await consultaTarefaPorId(codigo);
+
+    if (valorTarefaBack){
+        setTarefa(valorTarefaBack);
     }else{
         router.push("/tarefa")
     }

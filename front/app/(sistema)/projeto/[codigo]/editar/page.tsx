@@ -7,6 +7,7 @@ import ProjetoForm from "../../components/ProjetoForm";
 import { useEffect, useState } from "react";
 import { Projeto } from "@/app/(sistema)/types/projeto";
 import axios from "axios";
+import { consultaProjetoPorId } from "@/app/services/projetoService";
 
 export default function EditarProjeto() {
     const parametro = useParams();
@@ -22,17 +23,17 @@ export default function EditarProjeto() {
         buscarDados();
     }, []);
 
-    const buscarDados = async () => {
-        const valorProjetoBack = await axios.get<Projeto>("http://localhost:8080/projetos/" + codigo)
+const buscarDados = async () => {
 
-        if (valorProjetoBack.status == 200) {
-            setProjetos(valorProjetoBack.data);
-        } else {
-            router.push("/projeto")
-        }
+    const valorProjetoBack = await consultaProjetoPorId(codigo);
 
+    if (valorProjetoBack) {
+        setProjetos(valorProjetoBack);
+    } else {
+        router.push("/projeto")
     }
 
+}
     if (!projeto) return (<div className="min-h-screen w-full flex items-center justify-center bg-[#0a0a0f] text-zinc-400 text-sm p-8">Carregando dados</div>);
 
 

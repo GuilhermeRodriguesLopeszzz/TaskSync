@@ -6,7 +6,8 @@ import { useParams, useRouter } from "next/navigation";
 import DesenvolvedorForm from "../../components/DesenvolvedorForm";
 import { useEffect, useState } from "react";
 import { Desenvolvedor } from "@/app/(sistema)/types/desenvolvedor";
-import axios from "axios";
+import { consultaDesenvolvedorPorId } from "@/app/services/desenvolvedorService";
+
 
 export default function EditarDesenvolvedor(){
     const parametro = useParams();
@@ -22,11 +23,13 @@ export default function EditarDesenvolvedor(){
         buscarDados();
 }, []);
 
-const buscarDados = async()=>{
-    const valorDesenvolvedorBack = await axios.get<Desenvolvedor>("http://localhost:8080/desenvolvedor/"+codigo)
 
-    if (valorDesenvolvedorBack.status==200){
-        setDesenvolvedor(valorDesenvolvedorBack.data);
+const buscarDados = async()=>{
+
+    const valorDesenvolvedorBack = await consultaDesenvolvedorPorId(codigo);
+
+    if (valorDesenvolvedorBack){
+        setDesenvolvedor(valorDesenvolvedorBack);
     }else{
         router.push("/desenvolvedor")
     }

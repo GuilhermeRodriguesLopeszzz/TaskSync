@@ -4,6 +4,7 @@ import { Tarefa, TarefaFormProps } from "../../types/tarefa";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import axios from "axios";
+import { atualizarTarefa, salvarTarefa } from "@/app/services/tarefaService";
 // HOOKS: useState, useEffect, useRouter e useParams
 //Usestate: guardar um valor que muda ao longo do tempo e fazer a tela se atualizar automaticamente quando esse valor muda.
 // UseEffect: executar uma ação automaticamente quando o 
@@ -27,33 +28,31 @@ export default function TarefaForm({ tarefaExistente }: TarefaFormProps) {
         )
     };
 
-    const handlerSalvar = async (formData: FormData) => {
+   const handlerSalvar = async (formData: FormData) => {
 
-        if (tarefaExistente) {
-
-            var dadosRetorno = await axios.put<number>("http://localhost:8080/tarefa/" + tarefa.id, tarefa)
-            if (dadosRetorno.status == 200) {
-                alert("Tarefa foi salvo com sucesso!")
-
-            } else {
-                alert(dadosRetorno.data);
-                return;
-            }
-            router.push("/tarefa")
-
+    if (tarefaExistente) {
+        var dadosRetorno = await atualizarTarefa(tarefa);
+        if (dadosRetorno) {
+            alert("Tarefa foi salva com sucesso!");
         } else {
+            alert("Erro ao atualizar Tarefa!");
 
-            var dadosRetorno = await axios.post<number>("http://localhost:8080/tarefa", tarefa)
-            if (dadosRetorno.status == 200) {
-                alert("Tarefa foi salvo com sucesso!")
+            return;
+        }
 
-            } else {
-                alert(dadosRetorno.data);
-                return;
-            }
-            router.push("/tarefa")
+    } else {
+        var dadosRetorno = await salvarTarefa(tarefa);
+        if (dadosRetorno) {
+            alert("Tarefa foi salva com sucesso!");
+        } else {
+            alert("Erro ao salvar Tarefa!");
+
+            return;
         }
     }
+
+    router.push("/tarefa");
+}
     return (
         <form action={handlerSalvar}>
 

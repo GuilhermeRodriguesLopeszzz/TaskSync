@@ -3,7 +3,8 @@ import Link from "next/link";
 import { Desenvolvedor, DesenvolvedorFormProps } from "../../types/desenvolvedor";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import axios from "axios";
+import { atualizarDesenvolvedor, salvarDesenvolvedor } from "@/app/services/desenvolvedorService";
+
 
 export default function DesenvolvedorForm({ desenvolvedorExistente }: DesenvolvedorFormProps) {
         const router = useRouter()
@@ -28,32 +29,31 @@ export default function DesenvolvedorForm({ desenvolvedorExistente }: Desenvolve
     };
 
     const handlerSalvar = async (formData: FormData) => {
-
+ 
         if (desenvolvedorExistente) {
-
-            var dadosRetorno = await axios.put<number>("http://localhost:8080/desenvolvedor/" + desenvolvedor.id, desenvolvedor)
-            if (dadosRetorno.status == 200) {
-                alert("Desenvolvedor foi salvo com sucesso!")
-
+            const dadosRetorno = await atualizarDesenvolvedor(desenvolvedor);
+            if (dadosRetorno) {
+                alert("Desenvolvedor foi salvo com sucesso!");
             } else {
-                alert(dadosRetorno.data);
+                alert("Erro ao atualizar Desenvolvedor!");
+ 
                 return;
             }
-            router.push("/desenvolvedor")
-
+ 
         } else {
-
-            var dadosRetorno = await axios.post<number>("http://localhost:8080/desenvolvedor", desenvolvedor)
-            if (dadosRetorno.status == 200) {
-                alert("Desenvolvedor foi salvo com sucesso!")
-
+            const dadosRetorno = await salvarDesenvolvedor(desenvolvedor);
+            if (dadosRetorno) {
+                alert("Desenvolvedor foi salvo com sucesso!");
             } else {
-                alert(dadosRetorno.data);
+                alert("Erro ao salvar Desenvolvedor!");
+ 
                 return;
             }
-            router.push("/desenvolvedor")
         }
+ 
+        router.push("/desenvolvedor");
     }
+
     return (
         <form action={handlerSalvar}>
 
