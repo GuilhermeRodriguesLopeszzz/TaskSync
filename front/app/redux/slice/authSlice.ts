@@ -3,10 +3,13 @@ import { Usuario } from "@/app/(sistema)/types/usuario";
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 import Cookies from 'js-cookie'
 
+const usuarioRecover = Cookies.get('usuario');
+const tokenRecover = Cookies.get('token');
+
 const initialState: AuthState = {
 
-    usuario: null,
-    token: ""
+    usuario: usuarioRecover ? JSON.parse(usuarioRecover) as Usuario : null,
+    token : tokenRecover ?? ""
 }
 
 

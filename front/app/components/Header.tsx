@@ -7,6 +7,7 @@ export default function Header() {
 
   const usuario = store.getState().auth.usuario;
   const dispatch = useDispatch();
+
   return (
     <header className="relative bg-black border-b border-white/10">
       {/* mesmo glow sutil do hero, só que achatado no header */}
@@ -30,7 +31,7 @@ export default function Header() {
             </svg>
           </div>
           <span className="text-sm font-medium text-zinc-300">
-            {usuario?.nome.toUpperCase()|| 'Usuario não identificado'}
+           {usuario? usuario.nome.toLocaleUpperCase() :'Usuário não identificado!'}
           </span>
         </div>
 
