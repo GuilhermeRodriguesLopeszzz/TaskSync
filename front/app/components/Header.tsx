@@ -1,4 +1,12 @@
+import { useDispatch } from "react-redux";
+import { store } from "../redux/store";
+import { logout } from "../redux/slice/authSlice";
+
 export default function Header() {
+
+
+  const usuario = store.getState().auth.usuario;
+  const dispatch = useDispatch();
   return (
     <header className="relative bg-black border-b border-white/10">
       {/* mesmo glow sutil do hero, só que achatado no header */}
@@ -22,11 +30,17 @@ export default function Header() {
             </svg>
           </div>
           <span className="text-sm font-medium text-zinc-300">
-            Usuario Guilherme
+            {usuario?.nome.toUpperCase()|| 'Usuario não identificado'}
           </span>
         </div>
 
-        <button
+        <button onClick={()=>
+          {
+            dispatch(logout());
+            
+
+          }
+        }
           className="px-4 py-2 rounded-lg text-sm font-semibold text-zinc-300
                      bg-white/5 border border-white/10
                      hover:text-white hover:border-fuchsia-500/40 hover:bg-fuchsia-500/10

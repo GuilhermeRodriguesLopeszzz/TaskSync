@@ -77,7 +77,9 @@ public class UsuarioService {
 
         //Novo Usuario
         if(id == 0L) {
+            //var usuarioLogado = getUsuarioLogado();
             Usuario usuarioBanco = new Usuario(usuario);
+           // usuarioBanco.setEmpresa(usuarioLogado.empresa_id());
             usuarioRepository.save(usuarioBanco);
 
             return new UsuarioResponse(usuarioBanco);
@@ -128,6 +130,22 @@ public class UsuarioService {
             return  true;
         }
         return false;
+
+    }
+
+    public UsuarioResponse BuscarUsuarioLogado() {
+        try {
+            var usuarioLogado = getUsuarioLogado();
+            return usuarioRepository.findById(usuarioLogado.id())
+                    .stream()
+                    //vai instanciar o contstrutor para construir o usuario response
+                    .map(UsuarioResponse::new)
+                    .findFirst()
+                    .orElse(null);
+
+        } catch (Exception e) {
+            throw new RuntimeException("Erro ao buscar usuario logado");
+        }
 
     }
 }

@@ -5,7 +5,7 @@ import api from "./api";
 
 export async function buscarListaTarefas() : Promise<Tarefa[]> {
 
-    const dados = await api.get<Tarefa[]>("http://localhost:8080/tarefa");
+    const dados = await api.get<Tarefa[]>("/tarefa");
 
     if(dados.status == 200){
         return dados.data;
@@ -18,7 +18,7 @@ export async function buscarListaTarefas() : Promise<Tarefa[]> {
 
 export async function deletarTarefa(id:number) : Promise<number>{
 
- var dados = await api.delete('http://localhost:8080/tarefa/'+id+'/excluir');
+ var dados = await api.delete('/tarefa/'+id+'/excluir');
     return dados.status;
 }
 
@@ -33,7 +33,7 @@ export async function atualizarStatusTarefa(tarefa:Tarefa) :Promise<void>{
     }
 
     var dadosRetorno = await  
-    api.patch('http://localhost:8080/tarefa/'+tarefa.id+'/status',novoStatus);
+    api.patch('/tarefa/'+tarefa.id+'/status',novoStatus);
 
     if(dadosRetorno.status==200){
         alert("Atualizado status com sucesso!");
@@ -45,20 +45,20 @@ export async function atualizarStatusTarefa(tarefa:Tarefa) :Promise<void>{
 }
 
 export async function consultaTarefaPorId(id:number):Promise<Tarefa>{
-    const valorTarefaBack = await api.get<Tarefa>('http://localhost:8080/tarefa/'+id);
+    const valorTarefaBack = await api.get<Tarefa>('/tarefa/'+id);
     return valorTarefaBack.data;
 
 }
 
 export async function  atualizarTarefa (tarefa:Tarefa): Promise<number>{
     var dadosRetorno = await  
-    api.put<number>('http://localhost:8080/tarefa/'+tarefa.id,tarefa);
+    api.put<number>('/tarefa/'+tarefa.id,tarefa);
     return dadosRetorno.data;
 }
 
 
 export async function  salvarTarefa (tarefa:Tarefa): Promise<number>{
     var dadosRetorno = await  
-    api.post<number>('http://localhost:8080/tarefa',tarefa);
+    api.post<number>('/tarefa',tarefa);
     return dadosRetorno.data;
 }

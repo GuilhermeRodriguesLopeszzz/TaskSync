@@ -114,4 +114,11 @@ public class UsuarioController {
             return  ResponseEntity.notFound().build();
     }
 
+    @GetMapping("/buscarusuariologado")
+    @Operation(summary = "Metodo de consulta de usuario logado", description = "Metodo responsavel em efetuar a busca de usuario logado")
+    public ResponseEntity<UsuarioResponse> buscarUsuarioLogado(){
+
+        return  ResponseEntity.ok(usuarioService.BuscarUsuarioLogado());
+    }
+
 }

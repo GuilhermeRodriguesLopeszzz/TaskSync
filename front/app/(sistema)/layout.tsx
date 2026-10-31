@@ -2,6 +2,8 @@ import Footer from "../components/Footer";
 import Header from "../components/Header";
 import Sidebar from "../components/Sidebar";
 export default function SistemaLayout({children}) {
+
+  //const usuario = useSelector(())
     return ( 
 
       <div className="flex min-h-screen bg-[#0a0a0f]">
