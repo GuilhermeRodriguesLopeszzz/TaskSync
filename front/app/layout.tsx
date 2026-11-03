@@ -21,11 +21,14 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html
-      lang="pt-br"
-      className= "h-full"
-    >
-      
-      <body><StoreProvider>{children}</StoreProvider></body>
+      lang="pt-BR"
+      className="h-full"
+      >
+      <body>
+        <StoreProvider>
+          {children}
+        </StoreProvider>
+      </body>
     </html>
   );
 }
