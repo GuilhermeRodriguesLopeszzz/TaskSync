@@ -1,6 +1,22 @@
+"use client"
 import Link from "next/link";
+import { useEffect, useState } from "react";
+import { useSelector } from "react-redux";
 
 export default function Sidebar() {
+
+  // Pega o usuário logado no Redux, o mesmo que o Header usa para mostrar o nome
+  const usuario = useSelector((state: any) => state.auth.usuario);
+
+  // Só vira true depois que a página carrega no navegador. Antes disso o menu é
+  // desenhado igual no servidor e no navegador, o que evita o erro de hidratação
+  const [montado, setMontado] = useState(false);
+
+  // useEffect roda só no navegador, uma vez (por causa do []), depois do primeiro render
+  useEffect(() => {
+    setMontado(true);
+  }, []);
+
   return (
 
     <aside className="w-64 shrink-0 h-screen sticky top-0 bg-white/[0.03] border-r border-white/10 backdrop-blur-xl flex flex-col">
@@ -13,6 +29,11 @@ export default function Sidebar() {
             <Link href="/tarefa" className="px-4 py-2.5 rounded-xl text-sm font-medium text-zinc-400 hover:text-white hover:bg-white/5 transition-colors">Tarefas</Link>
             <Link href="/projeto" className="px-4 py-2.5 rounded-xl text-sm font-medium text-zinc-400 hover:text-white hover:bg-white/5 transition-colors">Projetos</Link>
             <Link href="/desenvolvedor" className="px-4 py-2.5 rounded-xl text-sm font-medium text-zinc-400 hover:text-white hover:bg-white/5 transition-colors">Desenvolvedores</Link>
+
+            {/* Só desenha o link se o menu já carregou no navegador E o perfil for ROLE_ADMIN */}
+            {montado && usuario?.role === "ROLE_ADMIN" && (
+              <Link href="/empresa" className="px-4 py-2.5 rounded-xl text-sm font-medium text-zinc-400 hover:text-white hover:bg-white/5 transition-colors">Empresas</Link>
+            )}
         </nav>
     </aside>
       );

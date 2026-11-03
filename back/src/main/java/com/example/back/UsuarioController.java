@@ -46,12 +46,12 @@ public class UsuarioController {
         int respostaApi = executaMetodoAPI("http://localhost:8080/usuarios/admin",jsonRequest,"POST");
 
 
-        if(respostaApi ==200){
-            showMessage(Alert.AlertType.INFORMATION,"Usuario salv com sucesso!");
+        if(respostaApi == 200 || respostaApi == 201){
+            showMessage(Alert.AlertType.INFORMATION,"Usuário salvo com sucesso! " + respostaApi);
             voltar(event);
-
         }else {
-            showMessage(Alert.AlertType.ERROR,"Erro ao salvar usuário!");
+            showMessage(Alert.AlertType.ERROR,
+                    "Erro ao salvar usuário! Código HTTP: " + respostaApi);
         }
     }
 

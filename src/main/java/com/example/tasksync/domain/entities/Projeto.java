@@ -28,6 +28,10 @@ public class Projeto {
 
     private String descricao;
 
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "empresa_id",referencedColumnName = "id")
+    private Empresa empresa;
+
     // troque ATIVO pelo valor inicial do seu enum
     private EnumStatusProjeto status = EnumStatusProjeto.MEDIA;
 

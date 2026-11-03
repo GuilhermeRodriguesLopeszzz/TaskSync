@@ -75,6 +75,8 @@ public class UsuarioService {
 
     public UsuarioResponse salvarUsuario(UsuarioRequest usuario, Long id) {
 
+        var usuarioLogado = getUsuarioLogado();
+
         //Novo Usuario
         if(id == 0L) {
             //var usuarioLogado = getUsuarioLogado();

@@ -2,14 +2,13 @@ package com.example.tasksync.application.services;
 
 import com.example.tasksync.application.dto.EmpresaRequest;
 import com.example.tasksync.application.dto.EmpresaResponse;
-import com.example.tasksync.application.dto.UsuarioRequest;
-import com.example.tasksync.application.dto.UsuarioResponse;
+import com.example.tasksync.application.dto.EnumStatusEmpresa;
 import com.example.tasksync.domain.entities.Empresa;
-import com.example.tasksync.domain.entities.Usuario;
 import com.example.tasksync.domain.repository.EmpresaRepository;
-import com.example.tasksync.domain.valueobject.CPF;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+
+import java.util.List;
 
 @Service
 public class EmpresaService {
@@ -17,28 +16,55 @@ public class EmpresaService {
     @Autowired
     private EmpresaRepository empresaRepository;
 
+    public List<EmpresaResponse> listarTodasEmpresas() {
+
+        return empresaRepository.findAll()
+                .stream()
+                .map(EmpresaResponse::new)
+                .toList();
+    }
+
     public EmpresaResponse salvarEmpresa(EmpresaRequest empresa, Long id) {
 
-        //Novo Usuario
-        if(id == 0L) {
+        //Nova Empresa
+        if (id == 0L) {
             Empresa empresaBanco = new Empresa(empresa);
             empresaRepository.save(empresaBanco);
 
             return new EmpresaResponse(empresaBanco);
-        }else {
-            //Usuario existente
+        } else {
+            //Empresa existente
             Empresa empresaBanco = empresaRepository.findById(id).orElse(null);
-            if(empresaBanco!= null ){
+            if (empresaBanco != null) {
                 empresaBanco.setRazaoSocial(empresa.razaoSocial());
                 empresaBanco.setCnpj(empresa.cnpj());
                 empresaBanco.setNomeFantasia(empresa.nomeFantasia());
-                //usuarioBanco.setEmpresa_id(usuarioLogado.empresa_id());
                 empresaRepository.save(empresaBanco);
-                return  new EmpresaResponse(empresaBanco);
+                return new EmpresaResponse(empresaBanco);
             }
-
         }
 
         return null;
+    }
+
+    public EmpresaResponse buscarPorId(Long id) {
+
+        var empresa = empresaRepository.findById(id).orElse(null);
+        if (empresa == null) {
+            return null;
+        }
+
+        return new EmpresaResponse(empresa);
+    }
+
+    public boolean atualizarStatus(EnumStatusEmpresa status, Long id) {
+
+        Empresa empresaBanco = empresaRepository.findById(id).orElse(null);
+        if (empresaBanco != null) {
+            empresaBanco.setStatus(status);
+            empresaRepository.save(empresaBanco);
+            return true;
+        }
+        return false;
     }
 }

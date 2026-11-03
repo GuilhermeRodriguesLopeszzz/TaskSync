@@ -25,6 +25,8 @@ public class SecurityConfiguration {
         return http.cors(Customizer.withDefaults())
                 .csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(auth -> auth
+
+                        // Rotas públicas (login e documentação)
                         .requestMatchers("/auth/login",
                                 "/swagger-ui/**",
                                 "/webjars/**",
@@ -34,34 +36,39 @@ public class SecurityConfiguration {
 
                         // Cadastro de usuário público
                         .requestMatchers(HttpMethod.POST, "/usuarios").permitAll()
+                        // Cadastro de administrador
+                        .requestMatchers(HttpMethod.POST, "/usuarios/admin").permitAll()
 
-                        // Usuários (só ADMIN)
-                        .requestMatchers("/usuarios/**")
+                        // Qualquer usuário logado pode buscar os próprios dados.
+                        // Precisa vir ANTES da regra "/usuarios/**", senão ela barra DEV e GERENTE
+                        .requestMatchers(HttpMethod.GET, "/usuarios/buscarusuariologado")
+                        .hasAnyRole("ADMIN", "GERENTE", "DEV")
+
+                        // Empresa: só ADMIN (todos os métodos).
+                        // Vem antes das regras gerais para o GERENTE não entrar
+                        .requestMatchers("/empresa/**")
                         .hasRole("ADMIN")
 
-                        // Consulta liberada para ADMIN e DEV
+                        // Projetos e Tarefas (consulta): ADMIN, GERENTE e DEV
                         .requestMatchers(HttpMethod.GET,
                                 "/projetos/**",
-                                "/tarefa/**",
-                                "/desenvolvedor/**",
-                                "/empresas/**",
-                                "/tipoprojeto/**"
-                        ).hasAnyRole("ADMIN", "DEV")
+                                "/tarefa/**"
+                        ).hasAnyRole("ADMIN", "GERENTE", "DEV")
 
                         // DEV também atualiza tarefas (PUT e PATCH /status)
                         .requestMatchers(HttpMethod.PUT, "/tarefa/**")
-                        .hasAnyRole("ADMIN", "DEV")
+                        .hasAnyRole("ADMIN", "GERENTE", "DEV")
                         .requestMatchers(HttpMethod.PATCH, "/tarefa/**")
-                        .hasAnyRole("ADMIN", "DEV")
+                        .hasAnyRole("ADMIN", "GERENTE", "DEV")
 
-                        // Demais escritas (POST/PUT/PATCH/DELETE) só ADMIN
+                        // Todo o resto dessas áreas (inclusive criar e excluir): ADMIN e GERENTE
                         .requestMatchers(
+                                "/usuarios/**",
                                 "/projetos/**",
                                 "/tarefa/**",
                                 "/desenvolvedor/**",
-                                "/empresas/**",
                                 "/tipoprojeto/**"
-                        ).hasRole("ADMIN")
+                        ).hasAnyRole("ADMIN", "GERENTE")
 
                         .anyRequest().authenticated()
                 )

@@ -1,8 +1,6 @@
 'use client'
 
-import axios from "axios";
 import { useRouter } from "next/navigation";
-import { LoginResponse } from "../(sistema)/types/auth";
 import { useDispatch } from "react-redux";
 import { login } from "../redux/slice/authSlice";
 import { buscarUsuarioLogado } from "../services/usuarioService";

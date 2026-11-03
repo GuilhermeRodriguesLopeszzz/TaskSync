@@ -44,7 +44,7 @@ public class Usuario implements UserDetails {
 
     private String email;
 
-    private String role = "ROLE_USER";
+    private EnumRole role = EnumRole.ROLE_GERENTE;
 
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "empresa_id",referencedColumnName = "id")
@@ -66,7 +66,7 @@ public class Usuario implements UserDetails {
         this.setNome(criarAdminRequest.nome());
         this.setSenha(criarAdminRequest.senha());
         this.setEmail(criarAdminRequest.email());
-        this.setRole("ROLE_ADMIN");
+        this.setRole(EnumRole.ROLE_ADMIN);
 
     }
 
@@ -75,7 +75,7 @@ public class Usuario implements UserDetails {
         this.setNome(usuario.nome());
         this.setSenha(usuario.senha());
         this.setEmail(usuario.email());
-        this.setRole("ROLE_USER");
+        this.setRole(EnumRole.ROLE_GERENTE);
     }
 
     public Usuario(CriarDevRequest usuarioDev) {
@@ -83,13 +83,13 @@ public class Usuario implements UserDetails {
         this.setNome(usuarioDev.nome());
         this.setSenha(usuarioDev.senha());
         this.setEmail(usuarioDev.email());
-        this.setRole("ROLE_DEV");
+        this.setRole(EnumRole.ROLE_DEV);
     }
 
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        return List.of(new SimpleGrantedAuthority(this.role));
+        return List.of(new SimpleGrantedAuthority(this.role.name()));
     }
 
     @Override

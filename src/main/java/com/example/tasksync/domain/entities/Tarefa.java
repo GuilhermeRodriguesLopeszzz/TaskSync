@@ -33,8 +33,8 @@ public class Tarefa {
 
         private EnumStatusTarefa status = EnumStatusTarefa.PENDENTE;
 
-        @ManyToOne
-        @JoinColumn(name = "projeto_id")
+        @ManyToOne(fetch = FetchType.EAGER)
+        @JoinColumn(name = "projeto_id",referencedColumnName = "id")
         private Projeto projeto;
 
         public Tarefa(TarefaRequest tarefa) {
