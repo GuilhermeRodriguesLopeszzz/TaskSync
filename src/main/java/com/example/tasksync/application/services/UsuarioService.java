@@ -1,12 +1,14 @@
 package com.example.tasksync.application.services;
 
 import com.example.tasksync.application.dto.*;
+import com.example.tasksync.domain.entities.Empresa;
 import com.example.tasksync.domain.entities.Usuario;
 import com.example.tasksync.domain.repository.EmpresaRepository;
 import com.example.tasksync.domain.repository.UsuarioRepository;
 import com.example.tasksync.domain.valueobject.CPF;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
@@ -47,14 +49,14 @@ public class UsuarioService {
 
         var usuarioLogado = getUsuarioLogado();
 
-        if(usuarioLogado.empresa_id() ==null){
+        if(usuarioLogado.empresaId() ==null){
             return  usuarioRepository.findAll()
                     .stream()
                     .map(UsuarioResponse::new)
                     .toList();
         }
 
-        return  usuarioRepository.getUsuariosByEmpresa_Id(usuarioLogado.empresa_id())
+        return  usuarioRepository.getUsuariosByEmpresa_Id(usuarioLogado.empresaId())
                 .stream()
                 .map(UsuarioResponse::new)
                 .toList();
@@ -73,35 +75,79 @@ public class UsuarioService {
         return new CriarAdminResponse(usuarioAdminSalvar.getId(),"Usuario Salvo com sucesso!");
     }
 
+
     public UsuarioResponse salvarUsuario(UsuarioRequest usuario, Long id) {
 
         var usuarioLogado = getUsuarioLogado();
 
-        //Novo Usuario
-        if(id == 0L) {
-            //var usuarioLogado = getUsuarioLogado();
+        Empresa empresa = null;
+
+        if (usuarioLogado.role() == EnumRole.ROLE_GERENTE) {
+
+            // Gerente utiliza somente a empresa vinculada à sua conta
+            empresa = empresaRepository.findById(usuarioLogado.empresaId()).orElse(null);
+
+        } else if (usuarioLogado.role() == EnumRole.ROLE_ADMIN) {
+
+            // Admin pode escolher a empresa pelo request
+            empresa = empresaRepository.findById(usuario.empresaId()).orElse(null);
+
+        } else {
+
+            // Dev ou outro perfil não autorizado
+            throw new AccessDeniedException(
+                    "Seu perfil não tem permissão para realizar esta operação."
+            );
+        }
+
+        // Verifica se a empresa foi encontrada
+        if (empresa == null) {
+            return null;
+        }
+
+        // Novo usuário
+        if (id == 0L) {
+
             Usuario usuarioBanco = new Usuario(usuario);
-           // usuarioBanco.setEmpresa(usuarioLogado.empresa_id());
+            usuarioBanco.setEmpresa(empresa);
+
             usuarioRepository.save(usuarioBanco);
 
             return new UsuarioResponse(usuarioBanco);
-        }else {
-            //Usuario existente
+
+        } else {
+
+            // Usuário existente
             Usuario usuarioBanco = usuarioRepository.findById(id).orElse(null);
-            if(usuarioBanco!= null ){
+
+            if (usuarioBanco != null) {
+
+                // Verifica se o gerente está alterando um usuário da própria empresa
+                if (usuarioLogado.role() == EnumRole.ROLE_GERENTE &&
+                        !usuarioBanco.getEmpresa().getId().equals(usuarioLogado.empresaId())) {
+                    return null;
+                }
+
                 usuarioBanco.setNome(usuario.nome());
                 usuarioBanco.setCpf(new CPF(usuario.cpf()));
                 usuarioBanco.setEmail(usuario.email());
-                usuarioBanco.setSenha(usuario.senha());
-                //usuarioBanco.setEmpresa(usuario.empresaId());
-                usuarioRepository.save(usuarioBanco);
-                return  new UsuarioResponse(usuarioBanco);
-            }
 
+                // Atualiza a senha somente se ela foi informada
+                if (usuario.senha() != null && !usuario.senha().isBlank()) {
+                    usuarioBanco.setSenha(usuario.senha());
+                }
+
+                usuarioBanco.setEmpresa(empresa);
+
+                usuarioRepository.save(usuarioBanco);
+
+                return new UsuarioResponse(usuarioBanco);
+            }
         }
 
         return null;
     }
+
 
     public CriarDevResponse criarDev(CriarDevRequest criarDevRequest) {
 

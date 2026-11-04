@@ -1,3 +1,4 @@
+
 package com.example.tasksync.infra.configuration;
 
 
@@ -20,7 +21,7 @@ public class SecurityConfiguration {
     private JwtFilter jwtFilter;
 
     @Bean
-    public SecurityFilterChain filterChain (HttpSecurity http) throws Exception{
+    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
 
         return http.cors(Customizer.withDefaults())
                 .csrf(AbstractHttpConfigurer::disable)
@@ -34,34 +35,40 @@ public class SecurityConfiguration {
                                 "/v3/api-docs/**"
                         ).permitAll()
 
-                        // Cadastro de usuário público
-                        .requestMatchers(HttpMethod.POST, "/usuarios").permitAll()
-                        // Cadastro de administrador
+                        // Cadastro inicial de administrador
                         .requestMatchers(HttpMethod.POST, "/usuarios/admin").permitAll()
 
-                        // Qualquer usuário logado pode buscar os próprios dados.
-                        // Precisa vir ANTES da regra "/usuarios/**", senão ela barra DEV e GERENTE
+                        // Cadastro de gerente: somente ADMIN
+                        .requestMatchers(HttpMethod.POST, "/usuarios")
+                        .hasRole("ADMIN")
+
+                        // Cadastro de desenvolvedor: ADMIN e GERENTE
+                        .requestMatchers(HttpMethod.POST, "/usuarios/dev")
+                        .hasAnyRole("ADMIN", "GERENTE")
+
+                        // Qualquer usuário logado pode buscar os próprios dados
                         .requestMatchers(HttpMethod.GET, "/usuarios/buscarusuariologado")
                         .hasAnyRole("ADMIN", "GERENTE", "DEV")
 
-                        // Empresa: só ADMIN (todos os métodos).
-                        // Vem antes das regras gerais para o GERENTE não entrar
+                        // Empresa: somente ADMIN
                         .requestMatchers("/empresa/**")
                         .hasRole("ADMIN")
 
-                        // Projetos e Tarefas (consulta): ADMIN, GERENTE e DEV
+                        // Consulta de projetos e tarefas
                         .requestMatchers(HttpMethod.GET,
                                 "/projetos/**",
                                 "/tarefa/**"
                         ).hasAnyRole("ADMIN", "GERENTE", "DEV")
 
-                        // DEV também atualiza tarefas (PUT e PATCH /status)
+                        // Atualização de tarefas
                         .requestMatchers(HttpMethod.PUT, "/tarefa/**")
                         .hasAnyRole("ADMIN", "GERENTE", "DEV")
+
                         .requestMatchers(HttpMethod.PATCH, "/tarefa/**")
                         .hasAnyRole("ADMIN", "GERENTE", "DEV")
 
-                        // Todo o resto dessas áreas (inclusive criar e excluir): ADMIN e GERENTE
+                        //Todoo restante dessas áreas
+                        //somente ADMIN e GERENTE
                         .requestMatchers(
                                 "/usuarios/**",
                                 "/projetos/**",
@@ -70,12 +77,10 @@ public class SecurityConfiguration {
                                 "/tipoprojeto/**"
                         ).hasAnyRole("ADMIN", "GERENTE")
 
+                        // Qualquer outra rota exige autenticação
                         .anyRequest().authenticated()
                 )
-                .addFilterBefore( jwtFilter, UsernamePasswordAuthenticationFilter.class)
+                .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class)
                 .build();
-
     }
-
-
 }
