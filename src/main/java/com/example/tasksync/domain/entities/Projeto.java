@@ -38,11 +38,21 @@ public class Projeto {
     // Um projeto pode possuir vários desenvolvedores
     // O relacionamento é controlado pela entidade Usuario
     @ManyToMany(mappedBy = "projetos")
+    @ToString.Exclude
     private Set<Usuario> desenvolvedores = new HashSet<>();
 
     // Um projeto pode possuir várias tarefas
     @OneToMany(mappedBy = "projeto")
-    private List<Tarefa> tarefas;
+    // Evita que o Lombok inclua este relacionamento no metodo toString().
+    // Isso impede um loop infinito entre entidades relacionadas,
+    // como Projeto -> Tarefa -> Projeto, evitando StackOverflowError.
+    @ToString.Exclude
+    private List<Tarefa> tarefas = new ArrayList<>();
+
+    /*O new ArrayList<>() inicializa a lista de tarefas vazia,
+    evitando que ela fique nula quando um projeto é criado.
+    Assim, posso adicionar tarefas sem precisar inicializar a lista depois.
+     */
 
     private EnumStatusProjeto status = EnumStatusProjeto.MEDIA;
 

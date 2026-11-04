@@ -5,10 +5,7 @@ import com.example.tasksync.application.dto.TarefaRequest;
 import com.example.tasksync.application.dto.UsuarioRequest;
 import com.example.tasksync.domain.valueobject.CPF;
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.EqualsAndHashCode;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -41,6 +38,7 @@ public class Tarefa {
 
         @ManyToOne(fetch = FetchType.EAGER)
         @JoinColumn(name = "projeto_id",referencedColumnName = "id")
+        @ToString.Exclude
         private Projeto projeto;
 
         public Tarefa(TarefaRequest tarefa) {
