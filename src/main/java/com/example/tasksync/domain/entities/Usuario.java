@@ -19,11 +19,14 @@ import java.util.Set;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
+// Faz com que somente os atributos marcados com @EqualsAndHashCode.Include
+// sejam utilizados para comparar objetos, evitando problemas com relacionamentos.
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
 public class Usuario implements UserDetails {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    // Define que o ID será utilizado para comparar os objetos.
     @EqualsAndHashCode.Include
     private Long id;
 

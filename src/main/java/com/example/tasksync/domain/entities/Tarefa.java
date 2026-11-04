@@ -7,6 +7,7 @@ import com.example.tasksync.domain.valueobject.CPF;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDate;
@@ -19,10 +20,15 @@ import java.util.List;
 @NoArgsConstructor
 //Construtor com argumentos
 @AllArgsConstructor
+// Faz com que somente os atributos marcados com @EqualsAndHashCode.Include
+// sejam utilizados para comparar objetos, evitando problemas com relacionamentos.
+@EqualsAndHashCode(onlyExplicitlyIncluded = true)
 public class Tarefa {
 
         @Id
         @GeneratedValue(strategy = GenerationType.IDENTITY)
+        // Define que o ID será utilizado para comparar os objetos.
+        @EqualsAndHashCode.Include
         private Long id;
 
         private String titulo;

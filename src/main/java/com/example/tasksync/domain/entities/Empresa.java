@@ -1,13 +1,10 @@
+
 package com.example.tasksync.domain.entities;
 
 import com.example.tasksync.application.dto.EmpresaRequest;
 import com.example.tasksync.application.dto.EnumStatusEmpresa;
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.EqualsAndHashCode;
-import lombok.NoArgsConstructor;
-import lombok.ToString;
+import lombok.*;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -16,33 +13,37 @@ import java.util.List;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
+// Faz com que somente os atributos marcados com @EqualsAndHashCode.Include
+// sejam utilizados para comparar objetos, evitando problemas com relacionamentos.
+@EqualsAndHashCode(onlyExplicitlyIncluded = true)
 public class Empresa {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY) // o banco gera o id
+    @GeneratedValue(strategy = GenerationType.IDENTITY) // O banco gera o ID
+    // Define que o ID será utilizado para comparar os objetos.
+    @EqualsAndHashCode.Include
     private Long id;
 
     private String razaoSocial;
 
-    // unique: não permite duas empresas com o mesmo CNPJ
+    // Não permite duas empresas com o mesmo CNPJ
     @Column(unique = true)
     private String cnpj;
 
     private String nomeFantasia;
 
-    // 1 empresa tem N usuários. "mappedBy" diz que a FK está em Usuario.empresa.
-    // Os dois Exclude evitam o loop infinito do @Data (Empresa -> Usuario -> Empresa...).
+    // Uma empresa pode possuir vários usuários.
+    // mappedBy indica que o relacionamento é controlado por Usuario.empresa.
     @OneToMany(mappedBy = "empresa")
     @ToString.Exclude
-    @EqualsAndHashCode.Exclude
     private List<Usuario> usuarios = new ArrayList<>();
 
     private EnumStatusEmpresa status = EnumStatusEmpresa.ATIVO;
 
-    // 1 empresa tem N projetos. A FK está em Projeto.empresa.
+    // Uma empresa pode possuir vários projetos.
+    // mappedBy indica que o relacionamento é controlado por Projeto.empresa.
     @OneToMany(mappedBy = "empresa")
     @ToString.Exclude
-    @EqualsAndHashCode.Exclude
     private List<Projeto> projetos = new ArrayList<>();
 
     public Empresa(EmpresaRequest empresa) {
