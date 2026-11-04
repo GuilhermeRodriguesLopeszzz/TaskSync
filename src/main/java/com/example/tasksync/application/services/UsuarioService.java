@@ -76,86 +76,134 @@ public class UsuarioService {
     }
 
 
+
     public UsuarioResponse salvarUsuario(UsuarioRequest usuario, Long id) {
 
+        // Recupera os dados do usuário que está autenticado no sistema
         var usuarioLogado = getUsuarioLogado();
 
+        // Variáveis que receberão a empresa e a role do novo usuário
         Empresa empresa = null;
+        EnumRole role = null;
 
-        if (usuarioLogado.role() == EnumRole.ROLE_GERENTE) {
+        // Verifica se quem está realizando a operação é ADMIN
+        if (usuarioLogado.role() == EnumRole.ROLE_ADMIN) {
 
-            // Gerente utiliza somente a empresa vinculada à sua conta
+            // ADMIN pode escolher a empresa pelo ID enviado no cadastro
+            if (usuario.empresaId() == null) {
+                throw new RuntimeException("Informe uma empresa.");
+            }
+
+            empresa = empresaRepository.findById(usuario.empresaId()).orElse(null);
+
+            // ADMIN pode criar GERENTE ou DEV
+            if (usuario.role() == EnumRole.ROLE_GERENTE ||
+                    usuario.role() == EnumRole.ROLE_DEV) {
+
+                role = usuario.role();
+
+            } else {
+                throw new AccessDeniedException("Tipo de usuário inválido.");
+            }
+
+        } else if (usuarioLogado.role() == EnumRole.ROLE_GERENTE) {
+
+            // GERENTE só pode criar desenvolvedores
+            if (usuario.role() != EnumRole.ROLE_DEV) {
+                throw new AccessDeniedException(
+                        "Gerente só pode cadastrar desenvolvedores."
+                );
+            }
+
+            // O desenvolvedor será vinculado à empresa do próprio gerente
             empresa = empresaRepository.findById(usuarioLogado.empresaId()).orElse(null);
 
-        } else if (usuarioLogado.role() == EnumRole.ROLE_ADMIN) {
-
-            // Admin pode escolher a empresa pelo request
-            empresa = empresaRepository.findById(usuario.empresaId()).orElse(null);
+            // Define a role como DEV, sem depender de outros valores
+            // enviados pelo frontend
+            role = EnumRole.ROLE_DEV;
 
         } else {
 
-            // Dev ou outro perfil não autorizado
+            // Outros perfis, como DEV, não podem cadastrar usuários
             throw new AccessDeniedException(
                     "Seu perfil não tem permissão para realizar esta operação."
             );
         }
 
-        // Verifica se a empresa foi encontrada
+        // Verifica se a empresa informada ou vinculada foi encontrada
         if (empresa == null) {
-            return null;
+            throw new RuntimeException("Empresa não encontrada.");
         }
 
-        // Novo usuário
+        // Verifica se a operação é uma criação de usuário
         if (id == 0L) {
 
+            // Cria uma nova entidade de usuário
             Usuario usuarioBanco = new Usuario(usuario);
-            usuarioBanco.setEmpresa(empresa);
 
+            // Define a empresa e o perfil que foram validados acima
+            usuarioBanco.setEmpresa(empresa);
+            usuarioBanco.setRole(role);
+
+            // Salva o novo usuário no banco de dados
             usuarioRepository.save(usuarioBanco);
 
+            // Retorna os dados do usuário cadastrado
             return new UsuarioResponse(usuarioBanco);
 
         } else {
 
-            // Usuário existente
+            // Busca o usuário que será atualizado
             Usuario usuarioBanco = usuarioRepository.findById(id).orElse(null);
 
-            if (usuarioBanco != null) {
-
-                // Verifica se o gerente está alterando um usuário da própria empresa
-                if (usuarioLogado.role() == EnumRole.ROLE_GERENTE &&
-                        !usuarioBanco.getEmpresa().getId().equals(usuarioLogado.empresaId())) {
-                    return null;
-                }
-
-                usuarioBanco.setNome(usuario.nome());
-                usuarioBanco.setCpf(new CPF(usuario.cpf()));
-                usuarioBanco.setEmail(usuario.email());
-
-                // Atualiza a senha somente se ela foi informada
-                if (usuario.senha() != null && !usuario.senha().isBlank()) {
-                    usuarioBanco.setSenha(usuario.senha());
-                }
-
-                usuarioBanco.setEmpresa(empresa);
-
-                usuarioRepository.save(usuarioBanco);
-
-                return new UsuarioResponse(usuarioBanco);
+            // Verifica se o usuário existe
+            if (usuarioBanco == null) {
+                throw new RuntimeException("Usuário não encontrado.");
             }
-        }
 
-        return null;
+            // GERENTE só pode alterar usuários pertencentes à própria empresa
+            if (usuarioLogado.role() == EnumRole.ROLE_GERENTE &&
+                    (usuarioBanco.getEmpresa() == null ||
+                            !usuarioBanco.getEmpresa().getId().equals(usuarioLogado.empresaId()))) {
+
+                throw new AccessDeniedException(
+                        "Você não pode alterar usuários de outra empresa."
+                );
+            }
+
+            // Atualiza os dados básicos do usuário
+            usuarioBanco.setNome(usuario.nome());
+            usuarioBanco.setCpf(new CPF(usuario.cpf()));
+            usuarioBanco.setEmail(usuario.email());
+
+            // Atualiza a senha somente se uma nova senha foi informada
+            if (usuario.senha() != null && !usuario.senha().isBlank()) {
+                usuarioBanco.setSenha(usuario.senha());
+            }
+
+            // Atualiza a empresa conforme as regras de permissão
+            usuarioBanco.setEmpresa(empresa);
+
+            // Não altera a role durante a edição
+            // Assim, o usuário não consegue mudar o próprio perfil pelo request
+
+            // Salva as alterações no banco
+            usuarioRepository.save(usuarioBanco);
+
+            // Retorna os dados atualizados
+            return new UsuarioResponse(usuarioBanco);
+        }
     }
 
 
-    public CriarDevResponse criarDev(CriarDevRequest criarDevRequest) {
+
+    /* public CriarDevResponse criarDev(CriarDevRequest criarDevRequest) {
 
         Usuario usuarioDevSalvar = new Usuario(criarDevRequest);
         usuarioRepository.save(usuarioDevSalvar);
 
         return new CriarDevResponse(usuarioDevSalvar.getId(),"Usuario Salvo com sucesso!");
-    }
+    } */
 
     public UsuarioResponse buscarPorId(Long id) {
 

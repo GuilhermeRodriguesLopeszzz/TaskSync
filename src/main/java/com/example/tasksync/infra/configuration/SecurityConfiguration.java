@@ -38,9 +38,9 @@ public class SecurityConfiguration {
                         // Cadastro inicial de administrador
                         .requestMatchers(HttpMethod.POST, "/usuarios/admin").permitAll()
 
-                        // Cadastro de gerente: somente ADMIN
+                        // Cadastro de gerente: somente ADMIN e Gerente
                         .requestMatchers(HttpMethod.POST, "/usuarios")
-                        .hasRole("ADMIN")
+                        .hasAnyRole("ADMIN", "GERENTE")
 
                         // Cadastro de desenvolvedor: ADMIN e GERENTE
                         .requestMatchers(HttpMethod.POST, "/usuarios/dev")
