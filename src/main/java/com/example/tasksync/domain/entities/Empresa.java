@@ -1,7 +1,6 @@
 package com.example.tasksync.domain.entities;
 
 import com.example.tasksync.application.dto.EmpresaRequest;
-import com.example.tasksync.application.dto.EnumStatusDesenvolvedor;
 import com.example.tasksync.application.dto.EnumStatusEmpresa;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
