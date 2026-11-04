@@ -8,7 +8,6 @@ public record ProjetoRequest(
         String nome,
         String descricao,
         LocalDate dataInicio,
-        LocalDate dataPrevistaFim,
-        Set<Long> desenvolvedoresIds
+        LocalDate dataPrevistaFim
 ) {
 }
