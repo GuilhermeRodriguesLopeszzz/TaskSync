@@ -1,27 +1,30 @@
+
 package com.example.tasksync.domain.entities;
 
 import com.example.tasksync.application.dto.EnumStatusProjeto;
 import com.example.tasksync.application.dto.ProjetoRequest;
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
-
+import java.util.Set;
 
 @Entity
-//Get and Setters
+// Getters e Setters
 @Data
-//Construtor sem argumentos
+// Construtor sem argumentos
 @NoArgsConstructor
-//Construtor com argumentos
+// Construtor com argumentos
 @AllArgsConstructor
+@EqualsAndHashCode(onlyExplicitlyIncluded = true)
 public class Projeto {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @EqualsAndHashCode.Include
     private Long id;
 
     private String nome;
@@ -29,10 +32,18 @@ public class Projeto {
     private String descricao;
 
     @ManyToOne(fetch = FetchType.EAGER)
-    @JoinColumn(name = "empresa_id",referencedColumnName = "id")
+    @JoinColumn(name = "empresa_id", referencedColumnName = "id")
     private Empresa empresa;
 
-    // troque ATIVO pelo valor inicial do seu enum
+    // Um projeto pode possuir vários desenvolvedores
+    // O relacionamento é controlado pela entidade Usuario
+    @ManyToMany(mappedBy = "projetos")
+    private Set<Usuario> desenvolvedores = new HashSet<>();
+
+    // Um projeto pode possuir várias tarefas
+    @OneToMany(mappedBy = "projeto")
+    private List<Tarefa> tarefas;
+
     private EnumStatusProjeto status = EnumStatusProjeto.MEDIA;
 
     private LocalDate dataInicio;
@@ -45,5 +56,4 @@ public class Projeto {
         this.setDataInicio(projeto.dataInicio());
         this.setDataPrevistaFim(projeto.dataPrevistaFim());
     }
-
 }

@@ -1,10 +1,8 @@
 package com.example.tasksync.presentation;
 
-import com.example.tasksync.application.dto.AtualizarStatusRequestProjeto;
-import com.example.tasksync.application.dto.EnumStatusProjeto;
-import com.example.tasksync.application.dto.ProjetoRequest;
-import com.example.tasksync.application.dto.ProjetoResponse;
+import com.example.tasksync.application.dto.*;
 import com.example.tasksync.application.services.ProjetoService;
+import com.example.tasksync.application.services.TarefaService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -21,6 +19,8 @@ public class ProjetoController {
 
     @Autowired
     private ProjetoService projetoService;
+    @Autowired
+    private TarefaService tarefaService;
 
     @GetMapping
     @Operation(summary = "Metodo de consulta de lista de projeto", description = "Metodo responsavel em efetuar a consulta de todos os projetos sem filtro")
@@ -55,7 +55,6 @@ public class ProjetoController {
     @Operation(summary = "Metodo de atualização de status do projeto", description = "Metodo responsavel em atualizar apenas o status de um projeto especifico")
     public ResponseEntity<Void> atualizarStatus(@PathVariable Long id, @RequestBody AtualizarStatusRequestProjeto statusRequest) {
         var atualizou = projetoService.atualizarStatus(statusRequest.status(), id);
-
         if (atualizou) {
             return ResponseEntity.ok().build();
         }
@@ -81,6 +80,7 @@ public class ProjetoController {
     public ResponseEntity<Void> excluir(@PathVariable Long id) { // Recebe o id do projeto pela URL
         // Delega ao service a troca do status do projeto para EXCLUIDO (exclusão lógica)
         var atualizou = projetoService.atualizarStatus(EnumStatusProjeto.EXCLUIDO, id);
+
 
         // Se o status foi atualizado, o projeto existia: responde 200 OK
         if (atualizou) {
