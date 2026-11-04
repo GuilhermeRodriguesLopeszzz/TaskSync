@@ -41,6 +41,12 @@ public class Tarefa {
         @ToString.Exclude
         private Projeto projeto;
 
+        // Desenvolvedor responsável pela tarefa
+        @ManyToOne
+        @JoinColumn(name = "desenvolvedor_id", referencedColumnName = "id")
+        @ToString.Exclude
+        private Usuario desenvolvedor;
+
         public Tarefa(TarefaRequest tarefa) {
                 this.setTitulo(tarefa.titulo());
                 this.setDescricao(tarefa.descricao());
