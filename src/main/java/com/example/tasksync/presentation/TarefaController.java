@@ -1,12 +1,7 @@
 package com.example.tasksync.presentation;
 
-import com.example.tasksync.application.dto.AtualizarStatusRequestTarefa;
-import com.example.tasksync.application.dto.EnumStatusTarefa;
-import com.example.tasksync.application.dto.TarefaRequest;
-import com.example.tasksync.application.dto.TarefaResponse;
+import com.example.tasksync.application.dto.*;
 import com.example.tasksync.application.services.TarefaService;
-import com.example.tasksync.domain.entities.Tarefa;
-import com.example.tasksync.domain.repository.TarefaRepository;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -25,67 +20,112 @@ public class TarefaController {
     private TarefaService tarefaService;
 
     @GetMapping
-    @Operation(summary = "Metodo de consulta de lista de tarefa", description = "Metodo responsavel em efetuar a consulta de todas as tarefas sem filtro")
-    public ResponseEntity<List<TarefaResponse>> listarTodos() {
+    @Operation(summary = "Metodo de consulta de lista de tarefas", description = "Lista as tarefas conforme as permissoes do usuario")
+    public ResponseEntity<?> listarTodos() {
 
-        return ResponseEntity.ok(tarefaService.listarTodasTarefas());
+        try {
+            return ResponseEntity.ok(tarefaService.listarTodasTarefas());
+
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
     }
 
     @PostMapping
-    @Operation(summary = "Metodo de criação de tarefa", description = "Metodo responsavel em efetuar a criação de novas tarefas")
+    @Operation(summary = "Metodo de criação de tarefa", description = "Cria uma tarefa e atribui a um desenvolvedor vinculado ao projeto")
     public ResponseEntity<?> criar(@RequestBody TarefaRequest tarefa) {
 
         try {
+            // Envia os dados para o Service criar uma nova tarefa
             TarefaResponse tarefaBanco = tarefaService.salvarTarefa(tarefa, 0L);
+
             return ResponseEntity.status(HttpStatus.CREATED).body(tarefaBanco);
-        } catch (Exception e) {
+
+        } catch (IllegalArgumentException e) {
+
+            // Retorna a mensagem caso alguma regra seja violada
             return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
 
     @GetMapping("/{id}")
-    @Operation(summary = "Metodo de consulta de tarefa por id", description = "Metodo responsavel em efetuar a busca de uma tarefa especifica atraves do seu id")
-    public ResponseEntity<TarefaResponse> buscarPorId(@PathVariable Long id) {
-        TarefaResponse tarefaBanco = tarefaService.buscarPorId(id);
-        if (tarefaBanco != null) {
-            return ResponseEntity.ok(tarefaBanco);
-        }
-        return ResponseEntity.notFound().build();
-    }
+    @Operation(summary = "Metodo de consulta de tarefa por id", description = "Busca uma tarefa especifica pelo seu id")
+    public ResponseEntity<?> buscarPorId(@PathVariable Long id) {
 
-    @PatchMapping("/{id}/status")
-    @Operation(summary = "Metodo de atualização de status da tarefa", description = "Metodo responsavel em atualizar apenas o status de uma tarefa especifica")
-    public ResponseEntity<Void> atualizarStatus(@PathVariable Long id, @RequestBody AtualizarStatusRequestTarefa statusRequest) {
-        var atualizou = tarefaService.atualizarStatus(statusRequest.status(), id);
-
-        if (atualizou) {
-            return ResponseEntity.ok().build();
-        }
-        return ResponseEntity.notFound().build();
-    }
-
-    @PutMapping("/{id}")
-    @Operation(summary = "Metodo de atualização de tarefa", description = "Metodo responsavel em atualizar todos os dados de uma tarefa existente")
-    public ResponseEntity<?> atualizarTarefa(@PathVariable Long id, @RequestBody TarefaRequest tarefa) {
         try {
-            TarefaResponse tarefaBanco = tarefaService.salvarTarefa(tarefa, id);
+            TarefaResponse tarefaBanco = tarefaService.buscarPorId(id);
+
             if (tarefaBanco != null) {
                 return ResponseEntity.ok(tarefaBanco);
             }
+
             return ResponseEntity.notFound().build();
-        } catch (Exception e) {
+
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
+    @PatchMapping("/{id}/status")
+    @Operation(summary = "Metodo de atualização de status da tarefa", description = "Atualiza apenas o status de uma tarefa")
+    public ResponseEntity<?> atualizarStatus(
+            @PathVariable Long id,
+            @RequestBody AtualizarStatusRequestTarefa statusRequest) {
+
+        try {
+            boolean atualizou = tarefaService.atualizarStatus(
+                    statusRequest.status(), id
+            );
+
+            if (atualizou) {
+                return ResponseEntity.ok().build();
+            }
+
+            return ResponseEntity.notFound().build();
+
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
+    @PutMapping("/{id}")
+    @Operation(summary = "Metodo de atualização de tarefa", description = "Atualiza os dados e o desenvolvedor responsavel pela tarefa")
+    public ResponseEntity<?> atualizarTarefa(
+            @PathVariable Long id,
+            @RequestBody TarefaRequest tarefa) {
+
+        try {
+            TarefaResponse tarefaBanco = tarefaService.salvarTarefa(tarefa, id);
+
+            if (tarefaBanco != null) {
+                return ResponseEntity.ok(tarefaBanco);
+            }
+
+            return ResponseEntity.notFound().build();
+
+        } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
 
     @DeleteMapping("/{id}/excluir")
-    @Operation(summary = "Metodo de exclusão de tarefa", description = "Metodo responsavel em efetuar a exclusão logica de uma tarefa, alterando seu status para INTERROMPIDO")
-    public ResponseEntity<Void> excluir(@PathVariable Long id) {
-        var atualizou = tarefaService.atualizarStatus(EnumStatusTarefa.INTERROMPIDO, id);
+    @Operation(summary = "Metodo de exclusão de tarefa", description = "Efetua exclusão logica alterando o status para INTERROMPIDO")
+    public ResponseEntity<?> excluir(@PathVariable Long id) {
 
-        if (atualizou) {
-            return ResponseEntity.ok().build();
+        try {
+            // Exclusão lógica: altera o status para INTERROMPIDO
+            boolean atualizou = tarefaService.atualizarStatus(
+                    EnumStatusTarefa.INTERROMPIDO, id
+            );
+
+            if (atualizou) {
+                return ResponseEntity.ok().build();
+            }
+
+            return ResponseEntity.notFound().build();
+
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
         }
-        return ResponseEntity.notFound().build();
     }
 }

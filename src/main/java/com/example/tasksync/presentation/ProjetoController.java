@@ -93,4 +93,31 @@ public class ProjetoController {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
+
+
+    // Vincula um desenvolvedor a um projeto existente
+    @PostMapping("/{id}/desenvolvedores")
+    @Operation(
+            summary = "Vincular desenvolvedor ao projeto",
+            description = "Vincula um usuário ROLE_DEV a um projeto da mesma empresa"
+    )
+    public ResponseEntity<?> vincularDesenvolvedor(
+            @PathVariable Long id,
+            @RequestBody VincularDesenvolvedorRequest request) {
+
+        try {
+            // Chama o service para validar e salvar o relacionamento
+            ProjetoResponse projetoBanco =
+                    projetoService.vincularDesenvolvedor(id, request);
+
+            // Retorna 200 OK com os dados do projeto atualizado
+            return ResponseEntity.ok(projetoBanco);
+
+        } catch (IllegalArgumentException e) {
+
+            // Retorna 400 caso alguma regra de negócio seja violada
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
 }
