@@ -77,16 +77,20 @@ public class ProjetoController {
 
     @DeleteMapping("/{id}/excluir")
     @Operation(summary = "Metodo de exclusão de projeto", description = "Metodo responsavel em efetuar a exclusão logica de um projeto, alterando seu status para EXCLUIDO")
-    public ResponseEntity<Void> excluir(@PathVariable Long id) { // Recebe o id do projeto pela URL
-        // Delega ao service a troca do status do projeto para EXCLUIDO (exclusão lógica)
-        var atualizou = projetoService.atualizarStatus(EnumStatusProjeto.EXCLUIDO, id);
+    public ResponseEntity<?> excluir(@PathVariable Long id) {
+        try {
+            var atualizou = projetoService.atualizarStatus(
+                    EnumStatusProjeto.EXCLUIDO, id
+            );
 
+            if (atualizou) {
+                return ResponseEntity.ok().build();
+            }
 
-        // Se o status foi atualizado, o projeto existia: responde 200 OK
-        if (atualizou) {
-            return ResponseEntity.ok().build();
+            return ResponseEntity.notFound().build();
+
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
         }
-        // Caso contrário, o projeto não foi encontrado: responde 404 Not Found
-        return ResponseEntity.notFound().build();
     }
 }
