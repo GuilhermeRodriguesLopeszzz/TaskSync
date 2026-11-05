@@ -10,11 +10,13 @@ import com.example.tasksync.domain.repository.UsuarioRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
 @Service
 public class TarefaService {
+
     @Autowired
     private TarefaRepository tarefaRepository;
 
@@ -32,34 +34,160 @@ public class TarefaService {
                 .getPrincipal();
     }
 
-    public List<TarefaResponse> listarTodasTarefas() {
+    // Verifica se o usuário pode consultar uma tarefa
+    private void verificarPermissaoTarefa(
+            Tarefa tarefaBanco,
+            UsuarioLogado usuarioLogado) {
 
-        return tarefaRepository.findAll()
-                .stream()
-                .map(TarefaResponse::new)
-                .toList();
-    }
-
-
-    public TarefaResponse salvarTarefa(TarefaRequest tarefa, Long id) {
-
-        // Recupera os dados do usuário autenticado
-        UsuarioLogado usuarioLogado = getUsuarioLogado();
-
-        // Busca o projeto pelo ID informado no Request
-        Projeto projetoBanco = projetoRepository.findById(tarefa.projetoId()).orElse(null);
-
-        // Verifica se o projeto existe
-        if (projetoBanco == null) {
-            throw new IllegalArgumentException("Projeto não encontrado!");
+        // ADMIN pode acessar qualquer tarefa
+        if (usuarioLogado.role() == EnumRole.ROLE_ADMIN) {
+            return;
         }
 
-        // PASSO 4: Gerente só pode gerenciar tarefas da própria empresa
+        // GERENTE só pode acessar tarefas da própria empresa
+        if (usuarioLogado.role() == EnumRole.ROLE_GERENTE) {
+
+            if (usuarioLogado.empresaId() == null ||
+                    tarefaBanco.getProjeto() == null ||
+                    tarefaBanco.getProjeto().getEmpresa() == null ||
+                    !usuarioLogado.empresaId().equals(
+                            tarefaBanco.getProjeto().getEmpresa().getId())) {
+
+                throw new IllegalArgumentException(
+                        "Gerente não pode acessar tarefas de outra empresa!"
+                );
+            }
+
+            return;
+        }
+
+        // DEV só pode acessar tarefas atribuídas a ele
+        if (usuarioLogado.role() == EnumRole.ROLE_DEV) {
+
+            if (tarefaBanco.getDesenvolvedor() == null ||
+                    !usuarioLogado.id().equals(
+                            tarefaBanco.getDesenvolvedor().getId())) {
+
+                throw new IllegalArgumentException(
+                        "Desenvolvedor não pode acessar esta tarefa!"
+                );
+            }
+
+            return;
+        }
+
+        throw new IllegalArgumentException(
+                "Usuário sem permissão para acessar tarefas!"
+        );
+    }
+
+    // Lista as tarefas conforme o perfil do usuário
+    @Transactional(readOnly = true)
+    public List<TarefaResponse> listarTodasTarefas() {
+
+        UsuarioLogado usuarioLogado = getUsuarioLogado();
+
+        List<Tarefa> tarefasBanco = tarefaRepository.findAll();
+
+        // ADMIN visualiza todas as tarefas
+        if (usuarioLogado.role() == EnumRole.ROLE_ADMIN) {
+
+            return tarefasBanco.stream()
+                    .map(TarefaResponse::new)
+                    .toList();
+
+        } else if (usuarioLogado.role() == EnumRole.ROLE_GERENTE) {
+
+            // GERENTE visualiza tarefas da própria empresa
+            return tarefasBanco.stream()
+                    .filter(tarefa ->
+                            usuarioLogado.empresaId() != null &&
+                                    tarefa.getProjeto() != null &&
+                                    tarefa.getProjeto().getEmpresa() != null &&
+                                    usuarioLogado.empresaId().equals(
+                                            tarefa.getProjeto().getEmpresa().getId()
+                                    ))
+                    .map(TarefaResponse::new)
+                    .toList();
+
+        } else if (usuarioLogado.role() == EnumRole.ROLE_DEV) {
+
+            // DEV visualiza somente tarefas atribuídas a ele
+            return tarefasBanco.stream()
+                    .filter(tarefa ->
+                            tarefa.getDesenvolvedor() != null &&
+                                    usuarioLogado.id().equals(
+                                            tarefa.getDesenvolvedor().getId()
+                                    ))
+                    .map(TarefaResponse::new)
+                    .toList();
+
+        } else {
+
+            throw new IllegalArgumentException(
+                    "Usuário sem permissão para listar tarefas!"
+            );
+        }
+    }
+
+    // Cria ou atualiza uma tarefa
+    @Transactional
+    public TarefaResponse salvarTarefa(TarefaRequest tarefa, Long id) {
+
+        UsuarioLogado usuarioLogado = getUsuarioLogado();
+
+        // Somente ADMIN e GERENTE podem criar ou editar tarefas
+        if (usuarioLogado.role() != EnumRole.ROLE_ADMIN &&
+                usuarioLogado.role() != EnumRole.ROLE_GERENTE) {
+
+            throw new IllegalArgumentException(
+                    "Usuário sem permissão para criar ou editar tarefas!"
+            );
+        }
+
+        // Verifica se os IDs foram informados
+        if (tarefa == null ||
+                tarefa.projetoId() == null ||
+                tarefa.desenvolvedorId() == null) {
+
+            throw new IllegalArgumentException(
+                    "Informe o projeto e o desenvolvedor!"
+            );
+        }
+
+        // Se for edição, busca a tarefa antes de alterar os dados
+        Tarefa tarefaBanco = null;
+
+        if (id != 0L) {
+
+            tarefaBanco = tarefaRepository.findById(id).orElse(null);
+
+            if (tarefaBanco == null) {
+                return null;
+            }
+
+            // Verifica se o usuário tem acesso à tarefa existente
+            verificarPermissaoTarefa(tarefaBanco, usuarioLogado);
+        }
+
+        // Busca o projeto informado no Request
+        Projeto projetoBanco = projetoRepository.findById(
+                tarefa.projetoId()
+        ).orElse(null);
+
+        if (projetoBanco == null) {
+            throw new IllegalArgumentException(
+                    "Projeto não encontrado!"
+            );
+        }
+
+        // GERENTE só pode gerenciar projetos da própria empresa
         if (usuarioLogado.role() == EnumRole.ROLE_GERENTE) {
 
             if (usuarioLogado.empresaId() == null ||
                     projetoBanco.getEmpresa() == null ||
-                    !usuarioLogado.empresaId().equals(projetoBanco.getEmpresa().getId())) {
+                    !usuarioLogado.empresaId().equals(
+                            projetoBanco.getEmpresa().getId())) {
 
                 throw new IllegalArgumentException(
                         "Gerente não pode gerenciar tarefas de outra empresa!"
@@ -67,39 +195,51 @@ public class TarefaService {
             }
         }
 
-        // Busca o desenvolvedor informado no Request
+        // Busca o desenvolvedor informado
         Usuario desenvolvedorBanco = usuarioRepository.findById(
                 tarefa.desenvolvedorId()
         ).orElse(null);
 
-        // Verifica se o desenvolvedor existe
         if (desenvolvedorBanco == null) {
-            throw new IllegalArgumentException("Desenvolvedor não encontrado!");
+            throw new IllegalArgumentException(
+                    "Desenvolvedor não encontrado!"
+            );
         }
 
-        // PASSO 3: Verifica se o usuário possui ROLE_DEV
+        // Somente ROLE_DEV pode receber tarefas
         if (desenvolvedorBanco.getRole() != EnumRole.ROLE_DEV) {
+
             throw new IllegalArgumentException(
                     "Somente desenvolvedores podem receber tarefas!"
             );
         }
 
-        // PASSO 3: Verifica se o desenvolvedor participa do projeto
+        // Verifica se o desenvolvedor pertence à empresa do projeto
+        if (desenvolvedorBanco.getEmpresa() == null ||
+                projetoBanco.getEmpresa() == null ||
+                !desenvolvedorBanco.getEmpresa().getId().equals(
+                        projetoBanco.getEmpresa().getId())) {
+
+            throw new IllegalArgumentException(
+                    "Desenvolvedor não pertence à empresa do projeto!"
+            );
+        }
+
+        // Desenvolvedor precisa participar do projeto
         if (!desenvolvedorBanco.getProjetos().contains(projetoBanco)) {
+
             throw new IllegalArgumentException(
                     "Desenvolvedor não está vinculado a este projeto!"
             );
         }
 
-        // Nova tarefa
+        // NOVA TAREFA
         if (id == 0L) {
 
-            Tarefa tarefaBanco = new Tarefa(tarefa);
+            tarefaBanco = new Tarefa(tarefa);
 
-            // Vincula a tarefa ao projeto
+            // Associa projeto e desenvolvedor
             tarefaBanco.setProjeto(projetoBanco);
-
-            // Define o desenvolvedor responsável
             tarefaBanco.setDesenvolvedor(desenvolvedorBanco);
 
             tarefaRepository.save(tarefaBanco);
@@ -108,55 +248,98 @@ public class TarefaService {
 
         } else {
 
-            // Tarefa existente
-            Tarefa tarefaBanco = tarefaRepository.findById(id).orElse(null);
+            // TAREFA EXISTENTE
 
-            if (tarefaBanco != null) {
+            // Não permite mudar a tarefa para outro projeto
+            if (tarefaBanco.getProjeto() == null ||
+                    !tarefaBanco.getProjeto().getId().equals(
+                            projetoBanco.getId())) {
 
-                // Verifica se a tarefa pertence ao projeto informado
-                if (tarefaBanco.getProjeto() == null ||
-                        !tarefaBanco.getProjeto().getId().equals(projetoBanco.getId())) {
-                    throw new IllegalArgumentException(
-                            "Tarefa não pertence ao projeto informado!"
-                    );
-                }
-
-                // Atualiza os dados da tarefa
-                tarefaBanco.setTitulo(tarefa.titulo());
-                tarefaBanco.setDescricao(tarefa.descricao());
-                tarefaBanco.setDataPrazo(tarefa.dataPrazo());
-
-                // Atualiza o desenvolvedor responsável
-                tarefaBanco.setDesenvolvedor(desenvolvedorBanco);
-
-                tarefaRepository.save(tarefaBanco);
-
-                return new TarefaResponse(tarefaBanco);
+                throw new IllegalArgumentException(
+                        "Tarefa não pertence ao projeto informado!"
+                );
             }
-        }
 
-        return null;
+            // Atualiza os dados
+            tarefaBanco.setTitulo(tarefa.titulo());
+            tarefaBanco.setDescricao(tarefa.descricao());
+            tarefaBanco.setDataPrazo(tarefa.dataPrazo());
+
+            // Permite trocar o responsável, se estiver vinculado
+            tarefaBanco.setDesenvolvedor(desenvolvedorBanco);
+
+            tarefaRepository.save(tarefaBanco);
+
+            return new TarefaResponse(tarefaBanco);
+        }
     }
 
+    // Busca uma tarefa pelo ID, respeitando as permissões
+    @Transactional(readOnly = true)
     public TarefaResponse buscarPorId(Long id) {
 
-        var tarefa = tarefaRepository.findById(id).orElse(null);
-        if (tarefa == null) {
+        UsuarioLogado usuarioLogado = getUsuarioLogado();
+
+        Tarefa tarefaBanco = tarefaRepository.findById(id)
+                .orElse(null);
+
+        if (tarefaBanco == null) {
             return null;
         }
 
-        return new TarefaResponse(tarefa);
+        // Verifica se o usuário pode consultar a tarefa
+        verificarPermissaoTarefa(tarefaBanco, usuarioLogado);
+
+        return new TarefaResponse(tarefaBanco);
     }
 
+    // Atualiza o status da tarefa
+    @Transactional
     public boolean atualizarStatus(EnumStatusTarefa status, Long id) {
 
-        Tarefa tarefaBanco = tarefaRepository.findById(id).orElse(null);
-        if (tarefaBanco != null) {
-            tarefaBanco.setStatus(status);
-            tarefaRepository.save(tarefaBanco);
-            return true;
+        UsuarioLogado usuarioLogado = getUsuarioLogado();
+
+        if (status == null) {
+            throw new IllegalArgumentException(
+                    "Informe o status da tarefa!"
+            );
         }
-        return false;
+
+        Tarefa tarefaBanco = tarefaRepository.findById(id)
+                .orElse(null);
+
+        if (tarefaBanco == null) {
+            return false;
+        }
+
+        // ADMIN e GERENTE respeitam suas permissões de empresa
+        // DEV só pode alterar tarefas atribuídas a ele
+        verificarPermissaoTarefa(tarefaBanco, usuarioLogado);
+
+        // Atualiza o status
+        tarefaBanco.setStatus(status);
+
+        tarefaRepository.save(tarefaBanco);
+
+        return true;
+    }
+
+    // Exclusão lógica da tarefa
+    @Transactional
+    public boolean excluirTarefa(Long id) {
+
+        UsuarioLogado usuarioLogado = getUsuarioLogado();
+
+        // Somente ADMIN e GERENTE podem excluir tarefas
+        if (usuarioLogado.role() != EnumRole.ROLE_ADMIN &&
+                usuarioLogado.role() != EnumRole.ROLE_GERENTE) {
+
+            throw new IllegalArgumentException(
+                    "Usuário sem permissão para excluir tarefas!"
+            );
+        }
+
+        // Reutiliza as validações de empresa do atualizarStatus
+        return atualizarStatus(EnumStatusTarefa.EXCLUIDO, id);
     }
 }
-

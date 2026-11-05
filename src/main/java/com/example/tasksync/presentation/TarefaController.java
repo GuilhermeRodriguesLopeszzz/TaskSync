@@ -113,10 +113,8 @@ public class TarefaController {
     public ResponseEntity<?> excluir(@PathVariable Long id) {
 
         try {
-            // Exclusão lógica: altera o status para INTERROMPIDO
-            boolean atualizou = tarefaService.atualizarStatus(
-                    EnumStatusTarefa.INTERROMPIDO, id
-            );
+            // Exclusão lógica: altera o status para EXCLUIDO
+            boolean atualizou = tarefaService.excluirTarefa(id);
 
             if (atualizou) {
                 return ResponseEntity.ok().build();
