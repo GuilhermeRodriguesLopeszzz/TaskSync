@@ -7,114 +7,172 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
 @RestController
 @RequestMapping("/projetos")
-@Tag(name = "Projeto", description = "Grupo de APIs responsavel por controlar a estrutura de criação e consulta de projetos do sistema!")
+@Tag(name = "Projeto", description = "APIs responsáveis pelo gerenciamento de projetos"
+)
 public class ProjetoController {
 
     @Autowired
     private ProjetoService projetoService;
 
+
+    // Lista os projetos conforme as permissões do usuário logado
     @GetMapping
-    @Operation(summary = "Metodo de consulta de lista de projeto", description = "Metodo responsavel em efetuar a consulta de todos os projetos sem filtro")
+    @Operation(summary = "Listar projetos", description = "Lista projetos respeitando as permissões de ADMIN, GERENTE e DEV"
+    )
     public ResponseEntity<List<ProjetoResponse>> listarTodos() {
 
-        return ResponseEntity.ok(projetoService.listarTodosProjetos());
+        return ResponseEntity.ok(
+                projetoService.listarTodosProjetos()
+        );
     }
 
+
+    // Cadastra um novo projeto
     @PostMapping
-    @Operation(summary = "Metodo de criação de projeto", description = "Metodo responsavel em efetuar a criação de novos projetos")
-    public ResponseEntity<?> criar(@RequestBody ProjetoRequest projeto) {
+    @Operation(summary = "Cadastrar projeto", description = "Cria um projeto vinculado a uma empresa"
+    )
+    public ResponseEntity<ProjetoResponse> criar(
+            @RequestBody ProjetoRequest projeto) {
 
-        try {
-            ProjetoResponse projetoBanco = projetoService.salvarProjeto(projeto, 0L);
-            return ResponseEntity.status(HttpStatus.CREATED).body(projetoBanco);
-        } catch (Exception e) {
-            return ResponseEntity.badRequest().body(e.getMessage());
-        }
+        // O ID 0 indica que será criado um novo projeto
+        ProjetoResponse projetoBanco =
+                projetoService.salvarProjeto(projeto, 0L);
+
+        // Retorna 201 Created quando o projeto é cadastrado
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(projetoBanco);
     }
 
+
+    // Busca um projeto específico pelo ID
     @GetMapping("/{id}")
-    @Operation(summary = "Metodo de consulta de projeto por id", description = "Metodo responsavel em efetuar a busca de um projeto especifico atraves do seu id")
-    public ResponseEntity<ProjetoResponse> buscarPorId(@PathVariable Long id) {
+    @Operation(summary = "Buscar projeto por ID", description = "Consulta um projeto respeitando as permissões do usuário"
+    )
+    public ResponseEntity<ProjetoResponse> buscarPorId(
+            @PathVariable Long id) {
+
         ProjetoResponse projetoBanco = projetoService.buscarPorId(id);
+
+        // Retorna 200 quando encontrar o projeto
         if (projetoBanco != null) {
             return ResponseEntity.ok(projetoBanco);
         }
+
+        // Retorna 404 se o projeto não existir
         return ResponseEntity.notFound().build();
     }
 
+
+    // Atualiza somente o status do projeto
     @PatchMapping("/{id}/status")
-    @Operation(summary = "Metodo de atualização de status do projeto", description = "Metodo responsavel em atualizar apenas o status de um projeto especifico")
-    public ResponseEntity<Void> atualizarStatus(@PathVariable Long id, @RequestBody AtualizarStatusRequestProjeto statusRequest) {
-        var atualizou = projetoService.atualizarStatus(statusRequest.status(), id);
+    @Operation(summary = "Atualizar status do projeto", description = "Altera o status do projeto respeitando as regras de negócio"
+    )
+    public ResponseEntity<Void> atualizarStatus(
+            @PathVariable Long id,
+            @RequestBody AtualizarStatusRequestProjeto statusRequest) {
+
+        // A Service verifica as permissões e as regras de negócio
+        boolean atualizou = projetoService.atualizarStatus(
+                statusRequest.status(), id
+        );
+
+        // Retorna 200 se o status foi atualizado
         if (atualizou) {
             return ResponseEntity.ok().build();
         }
+
+        // Retorna 404 se o projeto não existir
         return ResponseEntity.notFound().build();
     }
 
+    // Atualiza os dados de um projeto existente
     @PutMapping("/{id}")
-    @Operation(summary = "Metodo de atualização de projeto", description = "Metodo responsavel em atualizar todos os dados de um projeto existente")
-    public ResponseEntity<?> atualizarProjeto(@PathVariable Long id, @RequestBody ProjetoRequest projeto) {
-        try {
-            ProjetoResponse projetoBanco = projetoService.salvarProjeto(projeto, id);
-            if (projetoBanco != null) {
-                return ResponseEntity.ok(projetoBanco);
-            }
-            return ResponseEntity.notFound().build();
-        } catch (Exception e) {
-            return ResponseEntity.badRequest().body(e.getMessage());
+    @Operation(summary = "Atualizar projeto", description = "Atualiza os dados de um projeto existente"
+    )
+    public ResponseEntity<ProjetoResponse> atualizarProjeto(
+            @PathVariable Long id,
+            @RequestBody ProjetoRequest projeto) {
+
+        ProjetoResponse projetoBanco =
+                projetoService.salvarProjeto(projeto, id);
+
+        // Retorna 200 com os dados atualizados
+        if (projetoBanco != null) {
+            return ResponseEntity.ok(projetoBanco);
         }
+        // Retorna 404 se o projeto não existir
+        return ResponseEntity.notFound().build();
     }
 
+    // Realiza a exclusão lógica do projeto
     @DeleteMapping("/{id}/excluir")
-    @Operation(summary = "Metodo de exclusão de projeto", description = "Metodo responsavel em efetuar a exclusão logica de um projeto, alterando seu status para EXCLUIDO")
-    public ResponseEntity<?> excluir(@PathVariable Long id) {
-        try {
-            var atualizou = projetoService.atualizarStatus(
-                    EnumStatusProjeto.EXCLUIDO, id
-            );
+    @Operation(summary = "Excluir projeto", description = "Realiza a exclusão lógica, alterando o status para EXCLUIDO"
+    )
+    public ResponseEntity<Void> excluir(@PathVariable Long id) {
 
-            if (atualizou) {
-                return ResponseEntity.ok().build();
-            }
+        // Não apaga o projeto do banco de dados.
+        // Apenas altera seu status para EXCLUIDO.
+        boolean atualizou = projetoService.atualizarStatus(
+                EnumStatusProjeto.EXCLUIDO, id
+        );
 
-            return ResponseEntity.notFound().build();
-
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.badRequest().body(e.getMessage());
+        // Retorna 200 quando o projeto for excluído logicamente
+        if (atualizou) {
+            return ResponseEntity.ok().build();
         }
+
+        // Retorna 404 se o projeto não existir
+        return ResponseEntity.notFound().build();
     }
 
 
     // Vincula um desenvolvedor a um projeto existente
     @PostMapping("/{id}/desenvolvedores")
-    @Operation(
-            summary = "Vincular desenvolvedor ao projeto",
-            description = "Vincula um usuário ROLE_DEV a um projeto da mesma empresa"
+    @Operation(summary = "Vincular desenvolvedor ao projeto", description = "Vincula um usuário ROLE_DEV a um projeto da mesma empresa"
     )
-    public ResponseEntity<?> vincularDesenvolvedor(
+    public ResponseEntity<ProjetoResponse> vincularDesenvolvedor(
             @PathVariable Long id,
             @RequestBody VincularDesenvolvedorRequest request) {
 
-        try {
-            // Chama o service para validar e salvar o relacionamento
-            ProjetoResponse projetoBanco =
-                    projetoService.vincularDesenvolvedor(id, request);
+        // A Service verifica a empresa e o perfil do desenvolvedor
+        ProjetoResponse projetoBanco =
+                projetoService.vincularDesenvolvedor(id, request);
 
-            // Retorna 200 OK com os dados do projeto atualizado
-            return ResponseEntity.ok(projetoBanco);
-
-        } catch (IllegalArgumentException e) {
-
-            // Retorna 400 caso alguma regra de negócio seja violada
-            return ResponseEntity.badRequest().body(e.getMessage());
+        // Retorna 404 se o projeto ou desenvolvedor não existir
+        if (projetoBanco == null) {
+            return ResponseEntity.notFound().build();
         }
+
+        // Retorna 200 com os desenvolvedores vinculados
+        return ResponseEntity.ok(projetoBanco);
     }
 
+
+    // Trata erros de permissão lançados pela Service
+    @ExceptionHandler(AccessDeniedException.class)
+    public ResponseEntity<String> acessoNegado(
+            AccessDeniedException e) {
+
+        // Retorna 403 quando o usuário não tem permissão
+        return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                .body(e.getMessage());
+    }
+
+
+    // Trata erros de validação e regras de negócio
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ResponseEntity<String> dadosInvalidos(
+            IllegalArgumentException e) {
+
+        // Retorna 400 quando os dados são inválidos
+        return ResponseEntity.badRequest()
+                .body(e.getMessage());
+    }
 }

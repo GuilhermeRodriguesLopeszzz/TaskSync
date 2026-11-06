@@ -1,10 +1,10 @@
-
 package com.example.tasksync.application.services;
 
 import com.example.tasksync.application.dto.*;
 import com.example.tasksync.domain.entities.Empresa;
 import com.example.tasksync.domain.entities.Usuario;
 import com.example.tasksync.domain.repository.EmpresaRepository;
+import com.example.tasksync.domain.repository.TarefaRepository;
 import com.example.tasksync.domain.repository.UsuarioRepository;
 import com.example.tasksync.domain.valueobject.CPF;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -28,27 +28,90 @@ public class UsuarioService {
     @Autowired
     private TokenService tokenService;
 
+    @Autowired
+    private TarefaRepository tarefaRepository;
+
     @Value("${spring.secret}")
     private String secret;
 
+    // Mantém o login atual, mas impede novos tokens para usuários inativos.
+    // A troca da senha em texto puro por hash ficará para a revisão de segurança.
     public LoginResponse validarUsuarioAutenticadoERetornaToken(LoginRequest loginRequest) {
 
-        if (usuarioRepository.existsUsuarioByEmailAndSenha(
-                loginRequest.email(), loginRequest.senha())) {
-
-            var token = tokenService.gerarToken(loginRequest);
-            return new LoginResponse(token);
+        if (loginRequest == null ||
+                loginRequest.email() == null ||
+                loginRequest.senha() == null) {
+            return null;
         }
 
-        return null;
+        // Não gera token se o e-mail estiver repetido no banco de dados.
+        List<Usuario> usuariosComEmail = usuarioRepository.findAll().stream()
+                .filter(usuario -> loginRequest.email().equals(usuario.getEmail()))
+                .toList();
+
+        if (usuariosComEmail.size() != 1) {
+            return null;
+        }
+
+        Usuario usuarioBanco = usuariosComEmail.get(0);
+
+        // Confere a senha e rejeita usuários bloqueados ou excluídos.
+        if (!loginRequest.senha().equals(usuarioBanco.getSenha()) ||
+                usuarioBanco.getStatus() != EnumStatusUsuario.ATIVO) {
+            return null;
+        }
+
+        // Gerentes e desenvolvedores precisam de uma empresa ativa.
+        if (usuarioBanco.getRole() != EnumRole.ROLE_ADMIN &&
+                (usuarioBanco.getEmpresa() == null ||
+                        usuarioBanco.getEmpresa().getStatus() != EnumStatusEmpresa.ATIVO)) {
+            return null;
+        }
+
+        String token = tokenService.gerarToken(loginRequest);
+        return new LoginResponse(token);
     }
 
-    // Retorna o usuário autenticado pelo JWT
+    // Obtém o usuário do banco para consultar seu status e perfil atuais.
     public UsuarioLogado getUsuarioLogado() {
-        return (UsuarioLogado) SecurityContextHolder
-                .getContext()
-                .getAuthentication()
-                .getPrincipal();
+        var autenticacao = SecurityContextHolder.getContext().getAuthentication();
+
+        if (autenticacao == null ||
+                !(autenticacao.getPrincipal() instanceof UsuarioLogado)) {
+            throw new AccessDeniedException("Usuário não autenticado!");
+        }
+
+        UsuarioLogado dadosToken = (UsuarioLogado) autenticacao.getPrincipal();
+        Usuario usuarioBanco = usuarioRepository.findById(dadosToken.id()).orElse(null);
+
+        if (usuarioBanco == null ||
+                usuarioBanco.getStatus() != EnumStatusUsuario.ATIVO) {
+            throw new AccessDeniedException("Usuário inativo ou excluído!");
+        }
+
+        if (usuarioBanco.getRole() != EnumRole.ROLE_ADMIN &&
+                (usuarioBanco.getEmpresa() == null ||
+                        usuarioBanco.getEmpresa().getStatus() != EnumStatusEmpresa.ATIVO)) {
+            throw new AccessDeniedException("A empresa do usuário está inativa!");
+        }
+
+        return new UsuarioLogado(usuarioBanco);
+    }
+
+    // Evita e-mails duplicados, inclusive de usuários já excluídos.
+    // Isso também impede ambiguidades na busca de usuário para o token JWT.
+    private void verificarEmailDisponivel(String email, Long idUsuario) {
+        if (email == null || email.isBlank()) {
+            throw new IllegalArgumentException("Informe o e-mail do usuário!");
+        }
+
+        boolean emailDuplicado = usuarioRepository.findAll().stream()
+                .anyMatch(usuario -> email.equalsIgnoreCase(usuario.getEmail()) &&
+                        (idUsuario == null || !idUsuario.equals(usuario.getId())));
+
+        if (emailDuplicado) {
+            throw new IllegalArgumentException("Já existe um usuário com este e-mail!");
+        }
     }
 
     // Verifica se o usuário logado pode acessar o usuário informado
@@ -89,7 +152,8 @@ public class UsuarioService {
         );
     }
 
-    // Lista os usuários conforme o perfil
+    // Lista somente usuários não excluídos, conforme o perfil.
+    @Transactional(readOnly = true)
     public List<UsuarioResponse> ListarTodosUsuariosTable() {
 
         UsuarioLogado usuarioLogado = getUsuarioLogado();
@@ -99,6 +163,7 @@ public class UsuarioService {
 
             return usuarioRepository.findAll()
                     .stream()
+                    .filter(usuario -> usuario.getStatus() != EnumStatusUsuario.EXCLUIDO)
                     .map(UsuarioResponse::new)
                     .toList();
 
@@ -114,7 +179,8 @@ public class UsuarioService {
             return usuarioRepository
                     .getUsuariosByEmpresa_Id(usuarioLogado.empresaId())
                     .stream()
-                    .filter(usuario -> usuario.getRole() == EnumRole.ROLE_DEV)
+                    .filter(usuario -> usuario.getRole() == EnumRole.ROLE_DEV &&
+                            usuario.getStatus() != EnumStatusUsuario.EXCLUIDO)
                     .map(UsuarioResponse::new)
                     .toList();
 
@@ -128,6 +194,7 @@ public class UsuarioService {
 
     // Cadastro inicial do administrador
 
+    @Transactional
     public CriarAdminResponse criarAdmin(CriarAdminRequest criarAdminRequest) {
 
         // Se a chave secreta estiver errada ou não for informada,
@@ -153,6 +220,9 @@ public class UsuarioService {
             );
         }
 
+        // Garante que o primeiro administrador não use um e-mail já cadastrado.
+        verificarEmailDisponivel(criarAdminRequest.email(), null);
+
         // Cria e salva o administrador quando a chave é válida
         Usuario usuarioAdminSalvar = new Usuario(criarAdminRequest);
         usuarioRepository.save(usuarioAdminSalvar);
@@ -162,7 +232,8 @@ public class UsuarioService {
         return new CriarAdminResponse(0L, "Usuário salvo com sucesso!");
     }
 
-    // Cria ou atualiza usuários
+    // Cria ou atualiza usuários.
+    @Transactional
     public UsuarioResponse salvarUsuario(UsuarioRequest usuario, Long id) {
 
         UsuarioLogado usuarioLogado = getUsuarioLogado();
@@ -176,10 +247,8 @@ public class UsuarioService {
             );
         }
 
-        if (usuario == null) {
-            throw new IllegalArgumentException(
-                    "Informe os dados do usuário!"
-            );
+        if (usuario == null || id == null) {
+            throw new IllegalArgumentException("Informe os dados do usuário!");
         }
 
         // NOVO USUÁRIO
@@ -237,9 +306,18 @@ public class UsuarioService {
             }
 
             if (empresa == null) {
-                throw new IllegalArgumentException(
-                        "Empresa não encontrada!"
-                );
+                throw new IllegalArgumentException("Empresa não encontrada!");
+            }
+
+            // Só cadastra usuários em uma empresa ativa.
+            if (empresa.getStatus() != EnumStatusEmpresa.ATIVO) {
+                throw new IllegalArgumentException("A empresa precisa estar ativa!");
+            }
+
+            verificarEmailDisponivel(usuario.email(), null);
+
+            if (usuario.senha() == null || usuario.senha().isBlank()) {
+                throw new IllegalArgumentException("Informe a senha do usuário!");
             }
 
             Usuario usuarioBanco = new Usuario(usuario);
@@ -258,7 +336,9 @@ public class UsuarioService {
             Usuario usuarioBanco = usuarioRepository.findById(id)
                     .orElse(null);
 
-            if (usuarioBanco == null) {
+            // Não permite editar usuários excluídos.
+            if (usuarioBanco == null ||
+                    usuarioBanco.getStatus() == EnumStatusUsuario.EXCLUIDO) {
                 return null;
             }
 
@@ -286,9 +366,11 @@ public class UsuarioService {
                 ).orElse(null);
 
                 if (empresaBanco == null) {
-                    throw new IllegalArgumentException(
-                            "Empresa não encontrada!"
-                    );
+                    throw new IllegalArgumentException("Empresa não encontrada!");
+                }
+
+                if (empresaBanco.getStatus() != EnumStatusEmpresa.ATIVO) {
+                    throw new IllegalArgumentException("A empresa precisa estar ativa!");
                 }
 
                 // Não permite trocar a empresa de um DEV
@@ -322,6 +404,9 @@ public class UsuarioService {
                 // Mantém a empresa original do desenvolvedor
             }
 
+            // Garante que o novo e-mail não esteja em uso por outro usuário.
+            verificarEmailDisponivel(usuario.email(), id);
+
             // Atualiza os dados básicos
             usuarioBanco.setNome(usuario.nome());
             usuarioBanco.setCpf(new CPF(usuario.cpf()));
@@ -341,7 +426,8 @@ public class UsuarioService {
         }
     }
 
-    // Busca usuário por ID respeitando as permissões
+    // Busca usuário por ID respeitando as permissões.
+    @Transactional(readOnly = true)
     public UsuarioResponse buscarPorId(Long id) {
 
         UsuarioLogado usuarioLogado = getUsuarioLogado();
@@ -349,7 +435,8 @@ public class UsuarioService {
         Usuario usuarioBanco = usuarioRepository.findById(id)
                 .orElse(null);
 
-        if (usuarioBanco == null) {
+        if (usuarioBanco == null ||
+                usuarioBanco.getStatus() == EnumStatusUsuario.EXCLUIDO) {
             return null;
         }
 
@@ -358,7 +445,8 @@ public class UsuarioService {
         return new UsuarioResponse(usuarioBanco);
     }
 
-    // Atualiza o status de um usuário
+    // Atualiza o status de um usuário ou realiza sua exclusão lógica.
+    @Transactional
     public boolean atualizarStatus(EnumStatusUsuario status, Long id) {
 
         UsuarioLogado usuarioLogado = getUsuarioLogado();
@@ -372,7 +460,9 @@ public class UsuarioService {
         Usuario usuarioBanco = usuarioRepository.findById(id)
                 .orElse(null);
 
-        if (usuarioBanco == null) {
+        // Não é possível recuperar um usuário que já foi excluído.
+        if (usuarioBanco == null ||
+                usuarioBanco.getStatus() == EnumStatusUsuario.EXCLUIDO) {
             return false;
         }
 
@@ -386,14 +476,37 @@ public class UsuarioService {
             );
         }
 
+        if (status == EnumStatusUsuario.EXCLUIDO &&
+                usuarioBanco.getRole() == EnumRole.ROLE_DEV) {
+
+            // Não exclui um DEV que ainda possui tarefas não excluídas
+            // em projetos que continuam ativos.
+            boolean possuiTarefas = tarefaRepository.findAll().stream()
+                    .anyMatch(tarefa ->
+                            tarefa.getDesenvolvedor() != null &&
+                                    usuarioBanco.getId().equals(tarefa.getDesenvolvedor().getId()) &&
+                                    tarefa.getStatus() != EnumStatusTarefa.EXCLUIDO &&
+                                    tarefa.getProjeto() != null &&
+                                    tarefa.getProjeto().getStatus() != EnumStatusProjeto.EXCLUIDO);
+
+            if (possuiTarefas) {
+                throw new IllegalArgumentException(
+                        "Reatribua ou exclua as tarefas do desenvolvedor antes de excluí-lo!"
+                );
+            }
+
+            // Remove os vínculos ativos no ManyToMany.
+            // As tarefas históricas continuam no banco de dados.
+            usuarioBanco.getProjetos().clear();
+        }
+
         usuarioBanco.setStatus(status);
-
         usuarioRepository.save(usuarioBanco);
-
         return true;
     }
 
-    // Busca os dados do próprio usuário autenticado
+    // Busca os dados do próprio usuário autenticado.
+    @Transactional(readOnly = true)
     public UsuarioResponse BuscarUsuarioLogado() {
 
         UsuarioLogado usuarioLogado = getUsuarioLogado();

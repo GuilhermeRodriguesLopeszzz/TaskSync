@@ -1,4 +1,3 @@
-
 package com.example.tasksync.application.services;
 
 import com.example.tasksync.application.dto.*;
@@ -29,12 +28,41 @@ public class TarefaService {
     private ProjetoRepository projetoRepository;
 
 
-    // Retorna os dados do usuário autenticado pelo JWT
+    // Consulta o usuário no banco para verificar o status atual da conta.
     public UsuarioLogado getUsuarioLogado() {
-        return (UsuarioLogado) SecurityContextHolder
-                .getContext()
-                .getAuthentication()
-                .getPrincipal();
+        var autenticacao = SecurityContextHolder.getContext().getAuthentication();
+
+        if (autenticacao == null ||
+                !(autenticacao.getPrincipal() instanceof UsuarioLogado)) {
+            throw new AccessDeniedException("Usuário não autenticado!");
+        }
+
+        UsuarioLogado dadosToken = (UsuarioLogado) autenticacao.getPrincipal();
+        Usuario usuarioBanco = usuarioRepository.findById(dadosToken.id()).orElse(null);
+
+        if (usuarioBanco == null ||
+                usuarioBanco.getStatus() != EnumStatusUsuario.ATIVO) {
+            throw new AccessDeniedException("Usuário inativo ou excluído!");
+        }
+
+        // ADMIN não precisa ter empresa; os outros perfis precisam de empresa ativa.
+        if (usuarioBanco.getRole() != EnumRole.ROLE_ADMIN &&
+                (usuarioBanco.getEmpresa() == null ||
+                        usuarioBanco.getEmpresa().getStatus() != EnumStatusEmpresa.ATIVO)) {
+            throw new AccessDeniedException("A empresa do usuário está inativa!");
+        }
+
+        return new UsuarioLogado(usuarioBanco);
+    }
+
+
+    // Tarefa excluída, ou pertencente a projeto/empresa excluídos, não é exibida.
+    private boolean tarefaDisponivel(Tarefa tarefa) {
+        return tarefa.getStatus() != EnumStatusTarefa.EXCLUIDO &&
+                tarefa.getProjeto() != null &&
+                tarefa.getProjeto().getStatus() != EnumStatusProjeto.EXCLUIDO &&
+                tarefa.getProjeto().getEmpresa() != null &&
+                tarefa.getProjeto().getEmpresa().getStatus() != EnumStatusEmpresa.EXCLUIDO;
     }
 
 
@@ -95,7 +123,11 @@ public class TarefaService {
 
         UsuarioLogado usuarioLogado = getUsuarioLogado();
 
-        List<Tarefa> tarefasBanco = tarefaRepository.findAll();
+        // Evita mostrar tarefas excluídas, inclusive as de projetos excluídos.
+        List<Tarefa> tarefasBanco = tarefaRepository.findAll()
+                .stream()
+                .filter(this::tarefaDisponivel)
+                .toList();
 
         // ADMIN visualiza todas as tarefas
         if (usuarioLogado.role() == EnumRole.ROLE_ADMIN) {
@@ -172,7 +204,8 @@ public class TarefaService {
 
             tarefaBanco = tarefaRepository.findById(id).orElse(null);
 
-            if (tarefaBanco == null) {
+            // Não é permitido editar tarefas excluídas ou de projetos excluídos.
+            if (tarefaBanco == null || !tarefaDisponivel(tarefaBanco)) {
                 return null;
             }
 
@@ -191,6 +224,11 @@ public class TarefaService {
             );
         }
 
+        // Bloqueia tarefas novas ou editadas em projetos excluídos.
+        if (projetoBanco.getStatus() == EnumStatusProjeto.EXCLUIDO) {
+            throw new IllegalArgumentException("Não é possível usar um projeto excluído!");
+        }
+
         // GERENTE só pode gerenciar projetos da própria empresa
         if (usuarioLogado.role() == EnumRole.ROLE_GERENTE) {
 
@@ -203,6 +241,12 @@ public class TarefaService {
                         "Gerente não pode gerenciar tarefas de outra empresa!"
                 );
             }
+        }
+
+        // Bloqueia criação e edição em empresas bloqueadas ou excluídas.
+        if (projetoBanco.getEmpresa() == null ||
+                projetoBanco.getEmpresa().getStatus() != EnumStatusEmpresa.ATIVO) {
+            throw new IllegalArgumentException("A empresa do projeto precisa estar ativa!");
         }
 
         // Busca o desenvolvedor informado
@@ -222,6 +266,11 @@ public class TarefaService {
             throw new IllegalArgumentException(
                     "Somente desenvolvedores podem receber tarefas!"
             );
+        }
+
+        // Desenvolvedor bloqueado ou excluído não pode receber tarefas.
+        if (desenvolvedorBanco.getStatus() != EnumStatusUsuario.ATIVO) {
+            throw new IllegalArgumentException("O desenvolvedor precisa estar ativo!");
         }
 
         // Verifica se o desenvolvedor pertence à empresa do projeto
@@ -295,7 +344,7 @@ public class TarefaService {
         Tarefa tarefaBanco = tarefaRepository.findById(id)
                 .orElse(null);
 
-        if (tarefaBanco == null) {
+        if (tarefaBanco == null || !tarefaDisponivel(tarefaBanco)) {
             return null;
         }
 
@@ -323,7 +372,8 @@ public class TarefaService {
         Tarefa tarefaBanco = tarefaRepository.findById(id)
                 .orElse(null);
 
-        if (tarefaBanco == null) {
+        // Uma tarefa excluída ou de projeto excluído não pode ser alterada.
+        if (tarefaBanco == null || !tarefaDisponivel(tarefaBanco)) {
             return false;
         }
 
@@ -340,6 +390,19 @@ public class TarefaService {
             throw new AccessDeniedException(
                     "Desenvolvedor não possui permissão para excluir tarefas!"
             );
+        }
+
+        // Em empresa bloqueada, ADMIN pode apenas excluir a tarefa.
+        if (tarefaBanco.getProjeto().getEmpresa().getStatus() != EnumStatusEmpresa.ATIVO &&
+                status != EnumStatusTarefa.EXCLUIDO) {
+            throw new IllegalArgumentException("A empresa da tarefa está bloqueada!");
+        }
+
+        // Tarefa não excluída não pode mudar de status com DEV inativo.
+        if (status != EnumStatusTarefa.EXCLUIDO &&
+                (tarefaBanco.getDesenvolvedor() == null ||
+                        tarefaBanco.getDesenvolvedor().getStatus() != EnumStatusUsuario.ATIVO)) {
+            throw new IllegalArgumentException("O responsável pela tarefa precisa estar ativo!");
         }
 
         // Atualiza o status após validar as permissões
