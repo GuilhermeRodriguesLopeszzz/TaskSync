@@ -53,5 +53,17 @@ public class Tarefa {
                 this.setDataPrazo(tarefa.dataPrazo());
         }
 
+        // Valida o título antes de atribuir o valor
+        public void setTitulo(String titulo) {
+                // Impede títulos nulos, vazios ou apenas com espaços
+                if (titulo == null || titulo.isBlank()) {
+                        throw new IllegalArgumentException(
+                                "O título da tarefa é obrigatório!"
+                        );
+                }
+
+                this.titulo = titulo;
+        }
+
     }
 

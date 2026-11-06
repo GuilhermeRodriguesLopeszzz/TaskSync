@@ -146,13 +146,6 @@ public class ProjetoService {
             );
         }
 
-        // Somente usuários com ROLE_DEV podem ser vinculados
-        if (desenvolvedorBanco.getRole() != EnumRole.ROLE_DEV) {
-            throw new IllegalArgumentException(
-                    "Somente desenvolvedores podem participar dos projetos!"
-            );
-        }
-
         // Verifica se o desenvolvedor pertence
         // à mesma empresa do projeto
         if (desenvolvedorBanco.getEmpresa() == null ||
@@ -165,14 +158,9 @@ public class ProjetoService {
             );
         }
 
-        // Impede vincular o mesmo desenvolvedor duas vezes
-        if (desenvolvedorBanco.getProjetos().contains(projetoBanco)) {
-            throw new IllegalArgumentException(
-                    "Desenvolvedor já está vinculado a este projeto!"
-            );
-        }
-
-        // Adiciona o projeto à lista do desenvolvedor
+        // A entidade Usuario verifica:
+        // 1. Se o usuário possui ROLE_DEV
+        // 2. Se já está vinculado ao projeto
         desenvolvedorBanco.adicionarProjeto(projetoBanco);
 
         // Salva pelo Usuario, pois ele controla o ManyToMany
@@ -200,8 +188,7 @@ public class ProjetoService {
             );
         }
 
-
-// NOVO PROJETO
+        // NOVO PROJETO
         if (id == 0L) {
 
             Empresa empresaBanco = null;
@@ -384,25 +371,8 @@ public class ProjetoService {
             }
         }
 
-        // Verifica se o projeto será excluído logicamente
-        if (status == EnumStatusProjeto.EXCLUIDO) {
-
-            // Procura alguma tarefa com status ANDAMENTO
-            boolean tarefaEmAndamento = projetoBanco.getTarefas()
-                    .stream()
-                    .anyMatch(tarefa ->
-                            tarefa.getStatus() == EnumStatusTarefa.ANDAMENTO
-                    );
-
-            // Impede a exclusão caso exista tarefa em andamento
-            if (tarefaEmAndamento) {
-                throw new IllegalArgumentException(
-                        "Não é possível excluir um projeto com tarefas em andamento!"
-                );
-            }
-        }
-
-        // Atualiza o status do projeto
+        // A entidade Projeto verifica se a exclusão é permitida
+        // Não permite excluir caso existam tarefas em andamento
         projetoBanco.setStatus(status);
 
         // Salva a alteração no banco

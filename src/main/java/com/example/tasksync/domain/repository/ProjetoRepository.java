@@ -1,9 +1,7 @@
 package com.example.tasksync.domain.repository;
 
 import com.example.tasksync.application.dto.EnumStatusProjeto;
-import com.example.tasksync.application.dto.EnumStatusTarefa;
 import com.example.tasksync.domain.entities.Projeto;
-import com.example.tasksync.domain.entities.Usuario;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
@@ -14,5 +12,4 @@ import java.util.Optional;
 public interface ProjetoRepository extends JpaRepository<Projeto, Long> {
     Optional<List<Projeto>> findByStatusNot(EnumStatusProjeto status);
 
-    List<Projeto> findByStatusNot(EnumStatusTarefa statusTarefa);
 }

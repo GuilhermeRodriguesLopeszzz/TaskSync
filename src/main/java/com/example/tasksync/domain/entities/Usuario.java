@@ -55,9 +55,6 @@ public class Usuario implements UserDetails {
     @ToString.Exclude
     private Set<Projeto> projetos = new HashSet<>();
 
-    public void adicionarProjeto(Projeto projeto) {
-        this.projetos.add(projeto);
-    }
 
     private EnumStatusUsuario status = EnumStatusUsuario.ATIVO;
 
@@ -66,6 +63,27 @@ public class Usuario implements UserDetails {
             throw new IllegalArgumentException("Email Invalido!");
         }
         this.email = email;
+    }
+
+    // Vincula um desenvolvedor a um projeto
+    public void adicionarProjeto(Projeto projeto) {
+
+        // Somente desenvolvedores podem participar de projetos
+        if (this.role != EnumRole.ROLE_DEV) {
+            throw new IllegalArgumentException(
+                    "Somente desenvolvedores podem participar dos projetos!"
+            );
+        }
+
+        // Impede vincular o mesmo desenvolvedor duas vezes
+        if (this.projetos.contains(projeto)) {
+            throw new IllegalArgumentException(
+                    "Desenvolvedor já está vinculado a este projeto!"
+            );
+        }
+
+        // Adiciona o projeto ao desenvolvedor
+        this.projetos.add(projeto);
     }
 
     public Usuario(CriarAdminRequest criarAdminRequest) {

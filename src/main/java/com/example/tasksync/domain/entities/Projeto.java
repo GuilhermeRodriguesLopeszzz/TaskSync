@@ -2,6 +2,7 @@
 package com.example.tasksync.domain.entities;
 
 import com.example.tasksync.application.dto.EnumStatusProjeto;
+import com.example.tasksync.application.dto.EnumStatusTarefa;
 import com.example.tasksync.application.dto.ProjetoRequest;
 import jakarta.persistence.*;
 import lombok.*;
@@ -65,5 +66,29 @@ public class Projeto {
         this.setDescricao(projeto.descricao());
         this.setDataInicio(projeto.dataInicio());
         this.setDataPrevistaFim(projeto.dataPrevistaFim());
+    }
+
+    // Atualiza o status do projeto
+    public void setStatus(EnumStatusProjeto status) {
+
+        // Se o projeto estiver sendo excluído
+        if (status == EnumStatusProjeto.EXCLUIDO) {
+
+            // Verifica se existe alguma tarefa em andamento
+            boolean tarefaEmAndamento = this.tarefas.stream()
+                    .anyMatch(tarefa ->
+                            tarefa.getStatus() == EnumStatusTarefa.ANDAMENTO
+                    );
+
+            // Impede a exclusão se houver tarefa em andamento
+            if (tarefaEmAndamento) {
+                throw new IllegalArgumentException(
+                        "Não é possível excluir um projeto com tarefas em andamento!"
+                );
+            }
+        }
+
+        // Atualiza o status caso a regra seja respeitada
+        this.status = status;
     }
 }
