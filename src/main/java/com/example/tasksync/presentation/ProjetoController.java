@@ -19,8 +19,6 @@ public class ProjetoController {
 
     @Autowired
     private ProjetoService projetoService;
-    @Autowired
-    private TarefaService tarefaService;
 
     @GetMapping
     @Operation(summary = "Metodo de consulta de lista de projeto", description = "Metodo responsavel em efetuar a consulta de todos os projetos sem filtro")

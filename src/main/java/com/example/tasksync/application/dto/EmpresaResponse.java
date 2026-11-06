@@ -12,7 +12,10 @@ public record EmpresaResponse(
     public EmpresaResponse(Empresa empresa) {
         this(
                 empresa.getId(),
-                empresa.getCnpj(),
+                // Converte o Value Object para uma String formatada
+                empresa.getCnpj() != null
+                        ? empresa.getCnpj().toString()
+                        : null,
                 empresa.getNomeFantasia(),
                 empresa.getRazaoSocial(),
                 empresa.getStatus()

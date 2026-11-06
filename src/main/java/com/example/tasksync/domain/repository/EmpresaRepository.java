@@ -12,6 +12,7 @@ public interface EmpresaRepository extends JpaRepository<Empresa, Long> {
 
     Optional<List<Empresa>> findByStatusNot(EnumStatusEmpresa status);
 
-    boolean existsByCnpj(String cnpj);
+    // Consulta o campo cnpj que está dentro do Value Object CNPJ
+    boolean existsByCnpj_Cnpj(String cnpj);
 
 }

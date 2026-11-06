@@ -3,6 +3,7 @@ package com.example.tasksync.domain.entities;
 
 import com.example.tasksync.application.dto.EmpresaRequest;
 import com.example.tasksync.application.dto.EnumStatusEmpresa;
+import com.example.tasksync.domain.valueobject.CNPJ;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -28,7 +29,8 @@ public class Empresa {
 
     // Não permite duas empresas com o mesmo CNPJ
     @Column(unique = true)
-    private String cnpj;
+    @Embedded
+    private CNPJ cnpj;
 
     private String nomeFantasia;
 
@@ -48,7 +50,7 @@ public class Empresa {
 
     public Empresa(EmpresaRequest empresa) {
         this.setRazaoSocial(empresa.razaoSocial());
-        this.setCnpj(empresa.cnpj());
+        this.setCnpj(new CNPJ(empresa.cnpj()));
         this.setNomeFantasia(empresa.nomeFantasia());
     }
 }

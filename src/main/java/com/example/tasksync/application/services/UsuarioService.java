@@ -130,17 +130,17 @@ public class UsuarioService {
 
     public CriarAdminResponse criarAdmin(CriarAdminRequest criarAdminRequest) {
 
-        // Valida a chave secreta
+        // Se a chave secreta estiver errada ou não for informada,
+        // retorna uma mensagem de sucesso, mas não salva o usuário.
+        // Isso evita revelar diretamente se a chave está correta.
         if (criarAdminRequest == null ||
                 criarAdminRequest.secretKey() == null ||
                 !criarAdminRequest.secretKey().equals(secret)) {
 
-            throw new IllegalArgumentException(
-                    "Chave secreta inválida!"
-            );
+            return new CriarAdminResponse(0L, "Usuário salvo com sucesso!");
         }
 
-        // Permite o cadastro inicial somente quando não existe administrador
+        // Verifica se já existe um administrador cadastrado
         boolean existeAdmin = usuarioRepository.findAll()
                 .stream()
                 .anyMatch(usuario ->
@@ -153,14 +153,13 @@ public class UsuarioService {
             );
         }
 
+        // Cria e salva o administrador quando a chave é válida
         Usuario usuarioAdminSalvar = new Usuario(criarAdminRequest);
-
         usuarioRepository.save(usuarioAdminSalvar);
 
-        return new CriarAdminResponse(
-                usuarioAdminSalvar.getId(),
-                "Usuário salvo com sucesso!"
-        );
+        // Retorna a mesma resposta para não revelar
+        // se o cadastro realmente aconteceu.
+        return new CriarAdminResponse(0L, "Usuário salvo com sucesso!");
     }
 
     // Cria ou atualiza usuários

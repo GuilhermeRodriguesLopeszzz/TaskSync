@@ -1,3 +1,4 @@
+
 package com.example.tasksync.application.services;
 
 import com.example.tasksync.application.dto.*;
@@ -8,6 +9,7 @@ import com.example.tasksync.domain.repository.ProjetoRepository;
 import com.example.tasksync.domain.repository.TarefaRepository;
 import com.example.tasksync.domain.repository.UsuarioRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -26,6 +28,7 @@ public class TarefaService {
     @Autowired
     private ProjetoRepository projetoRepository;
 
+
     // Retorna os dados do usuário autenticado pelo JWT
     public UsuarioLogado getUsuarioLogado() {
         return (UsuarioLogado) SecurityContextHolder
@@ -34,7 +37,8 @@ public class TarefaService {
                 .getPrincipal();
     }
 
-    // Verifica se o usuário pode consultar uma tarefa
+
+    // Verifica se o usuário pode acessar uma tarefa
     private void verificarPermissaoTarefa(
             Tarefa tarefaBanco,
             UsuarioLogado usuarioLogado) {
@@ -53,7 +57,8 @@ public class TarefaService {
                     !usuarioLogado.empresaId().equals(
                             tarefaBanco.getProjeto().getEmpresa().getId())) {
 
-                throw new IllegalArgumentException(
+                // Retorna erro de permissão (403)
+                throw new AccessDeniedException(
                         "Gerente não pode acessar tarefas de outra empresa!"
                 );
             }
@@ -68,7 +73,8 @@ public class TarefaService {
                     !usuarioLogado.id().equals(
                             tarefaBanco.getDesenvolvedor().getId())) {
 
-                throw new IllegalArgumentException(
+                // Retorna erro de permissão (403)
+                throw new AccessDeniedException(
                         "Desenvolvedor não pode acessar esta tarefa!"
                 );
             }
@@ -76,10 +82,12 @@ public class TarefaService {
             return;
         }
 
-        throw new IllegalArgumentException(
+        // Bloqueia qualquer outro perfil não autorizado
+        throw new AccessDeniedException(
                 "Usuário sem permissão para acessar tarefas!"
         );
     }
+
 
     // Lista as tarefas conforme o perfil do usuário
     @Transactional(readOnly = true)
@@ -124,11 +132,13 @@ public class TarefaService {
 
         } else {
 
-            throw new IllegalArgumentException(
+            // Usuário sem permissão recebe 403
+            throw new AccessDeniedException(
                     "Usuário sem permissão para listar tarefas!"
             );
         }
     }
+
 
     // Cria ou atualiza uma tarefa
     @Transactional
@@ -140,7 +150,7 @@ public class TarefaService {
         if (usuarioLogado.role() != EnumRole.ROLE_ADMIN &&
                 usuarioLogado.role() != EnumRole.ROLE_GERENTE) {
 
-            throw new IllegalArgumentException(
+            throw new AccessDeniedException(
                     "Usuário sem permissão para criar ou editar tarefas!"
             );
         }
@@ -166,7 +176,7 @@ public class TarefaService {
                 return null;
             }
 
-            // Verifica se o usuário tem acesso à tarefa existente
+            // Verifica se o usuário pode editar a tarefa existente
             verificarPermissaoTarefa(tarefaBanco, usuarioLogado);
         }
 
@@ -189,7 +199,7 @@ public class TarefaService {
                     !usuarioLogado.empresaId().equals(
                             projetoBanco.getEmpresa().getId())) {
 
-                throw new IllegalArgumentException(
+                throw new AccessDeniedException(
                         "Gerente não pode gerenciar tarefas de outra empresa!"
                 );
             }
@@ -238,10 +248,11 @@ public class TarefaService {
 
             tarefaBanco = new Tarefa(tarefa);
 
-            // Associa projeto e desenvolvedor
+            // Associa o projeto e o desenvolvedor
             tarefaBanco.setProjeto(projetoBanco);
             tarefaBanco.setDesenvolvedor(desenvolvedorBanco);
 
+            // Salva a nova tarefa
             tarefaRepository.save(tarefaBanco);
 
             return new TarefaResponse(tarefaBanco);
@@ -260,12 +271,12 @@ public class TarefaService {
                 );
             }
 
-            // Atualiza os dados
+            // Atualiza os dados da tarefa
             tarefaBanco.setTitulo(tarefa.titulo());
             tarefaBanco.setDescricao(tarefa.descricao());
             tarefaBanco.setDataPrazo(tarefa.dataPrazo());
 
-            // Permite trocar o responsável, se estiver vinculado
+            // Permite trocar o responsável se estiver vinculado
             tarefaBanco.setDesenvolvedor(desenvolvedorBanco);
 
             tarefaRepository.save(tarefaBanco);
@@ -273,6 +284,7 @@ public class TarefaService {
             return new TarefaResponse(tarefaBanco);
         }
     }
+
 
     // Busca uma tarefa pelo ID, respeitando as permissões
     @Transactional(readOnly = true)
@@ -293,18 +305,21 @@ public class TarefaService {
         return new TarefaResponse(tarefaBanco);
     }
 
-    // Atualiza o status da tarefa
+
+    // Atualiza o status de uma tarefa
     @Transactional
     public boolean atualizarStatus(EnumStatusTarefa status, Long id) {
 
         UsuarioLogado usuarioLogado = getUsuarioLogado();
 
+        // Impede atualizar sem informar um status
         if (status == null) {
             throw new IllegalArgumentException(
                     "Informe o status da tarefa!"
             );
         }
 
+        // Busca a tarefa pelo ID
         Tarefa tarefaBanco = tarefaRepository.findById(id)
                 .orElse(null);
 
@@ -312,11 +327,22 @@ public class TarefaService {
             return false;
         }
 
-        // ADMIN e GERENTE respeitam suas permissões de empresa
-        // DEV só pode alterar tarefas atribuídas a ele
+        // ADMIN e GERENTE respeitam suas permissões de empresa.
+        // DEV só pode alterar tarefas atribuídas a ele.
         verificarPermissaoTarefa(tarefaBanco, usuarioLogado);
 
-        // Atualiza o status
+        // NOVA REGRA DE NEGÓCIO:
+        // Desenvolvedores não podem excluir tarefas pelo PATCH.
+        // Somente ADMIN e GERENTE podem utilizar o status EXCLUIDO.
+        if (usuarioLogado.role() == EnumRole.ROLE_DEV &&
+                status == EnumStatusTarefa.EXCLUIDO) {
+
+            throw new AccessDeniedException(
+                    "Desenvolvedor não possui permissão para excluir tarefas!"
+            );
+        }
+
+        // Atualiza o status após validar as permissões
         tarefaBanco.setStatus(status);
 
         tarefaRepository.save(tarefaBanco);
@@ -324,7 +350,8 @@ public class TarefaService {
         return true;
     }
 
-    // Exclusão lógica da tarefa
+
+    // Realiza a exclusão lógica da tarefa
     @Transactional
     public boolean excluirTarefa(Long id) {
 
@@ -334,12 +361,13 @@ public class TarefaService {
         if (usuarioLogado.role() != EnumRole.ROLE_ADMIN &&
                 usuarioLogado.role() != EnumRole.ROLE_GERENTE) {
 
-            throw new IllegalArgumentException(
+            throw new AccessDeniedException(
                     "Usuário sem permissão para excluir tarefas!"
             );
         }
 
-        // Reutiliza as validações de empresa do atualizarStatus
+        // Reutiliza o atualizarStatus para validar a empresa
+        // e alterar o status da tarefa para EXCLUIDO
         return atualizarStatus(EnumStatusTarefa.EXCLUIDO, id);
     }
 }

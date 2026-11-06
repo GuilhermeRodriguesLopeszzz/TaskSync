@@ -7,118 +7,183 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
 @RestController
 @RequestMapping("/usuarios")
-@Tag(name="Usuarios", description = "Grupo de APIs responsavel por controlar a estrutura de crição e consulta de usuario do sistema!")
+@Tag(name = "Usuarios", description = "APIs responsáveis pelo cadastro e gerenciamento de usuários"
+)
 public class UsuarioController {
-
 
     @Autowired
     private UsuarioService usuarioService;
 
+    // Lista os usuários conforme as permissões do perfil logado
     @GetMapping
-    @Operation(summary = "Metodo de consulta de usuario", description = "Metodo responsavel em efetuar a busca de todos os usuarios")
-    public ResponseEntity<List<UsuarioResponse>> listarTodos(){
+    @Operation(summary = "Listar usuários", description = "Lista os usuários respeitando as permissões de ADMIN e GERENTE"
+    )
+    public ResponseEntity<List<UsuarioResponse>> listarTodos() {
 
-        return  ResponseEntity.ok(usuarioService.ListarTodosUsuariosTable());
+        return ResponseEntity.ok(
+                usuarioService.ListarTodosUsuariosTable()
+        );
     }
 
 
+    // Cadastro inicial do administrador pelo aplicativo desktop
     @PostMapping("/admin")
-    @Operation (summary = "Metodo de criação de admin", description = "Metodo responsavel em efetuar a criação de admins")
-    public ResponseEntity<CriarAdminResponse> criarAdmin(@RequestBody CriarAdminRequest criarAdminRequest){
+    @Operation(summary = "Cadastrar administrador", description = "Realiza o cadastro inicial do administrador utilizando uma chave secreta"
+    )
+    public ResponseEntity<CriarAdminResponse> criarAdmin(
+            @RequestBody CriarAdminRequest criarAdminRequest) {
 
-        try{
-            CriarAdminResponse respostaSalvar = usuarioService.criarAdmin(criarAdminRequest);
-            return ResponseEntity.ok(respostaSalvar);
+        // A Service decide se o administrador será salvo.
+        // Mantém a resposta de sucesso mesmo quando a chave está incorreta,
+        // conforme a regra definida para o cadastro inicial.
+        CriarAdminResponse respostaSalvar =
+                usuarioService.criarAdmin(criarAdminRequest);
 
-        } catch (RuntimeException e) {
-            return ResponseEntity.badRequest().build();
-        }
-
+        return ResponseEntity.ok(respostaSalvar);
     }
 
-   /* @PostMapping("/dev")
-    @Operation (summary = "Metodo de criação de desenvolvedor", description = "Metodo responsavel em efetuar a criação de usuarios com perfil de desenvolvedor")
-    public ResponseEntity<CriarDevResponse> criarDev(@RequestBody CriarDevRequest criarDevRequest){
 
-        try{
-            CriarDevResponse respostaSalvar = usuarioService.criarDev(criarDevRequest);
-            return ResponseEntity.ok(respostaSalvar);
-
-        } catch (RuntimeException e) {
-            return ResponseEntity.badRequest().build();
-        }
-    }*/
-
-    //Apartir de aqui
-
+    // Busca um usuário pelo ID
     @GetMapping("/{id}")
-    @Operation(summary = "Metodo de consulta de usuario por id", description = "Metodo responsavel em efetuar a busca de um usuario especifico atraves do seu id")
-    public ResponseEntity<UsuarioResponse> buscarPorId(@PathVariable Long id){
+    @Operation(summary = "Buscar usuário por ID", description = "Consulta um usuário específico respeitando as permissões"
+    )
+    public ResponseEntity<UsuarioResponse> buscarPorId(
+            @PathVariable Long id) {
+
         UsuarioResponse usuarioBanco = usuarioService.buscarPorId(id);
-        if (usuarioBanco != null){
+
+        // Se encontrar o usuário, retorna 200 OK
+        if (usuarioBanco != null) {
             return ResponseEntity.ok(usuarioBanco);
         }
+
+        // Se não encontrar, retorna 404 Not Found
         return ResponseEntity.notFound().build();
     }
 
-    @PostMapping
-    @ResponseStatus(HttpStatus.CREATED)
-    @Operation (summary = "Metodo de criação de usuario", description = "Metodo responsavel em efetuar a criação de novos usuarios")
-    public ResponseEntity<?> criar(@RequestBody UsuarioRequest usuario){
 
-        try {
-            UsuarioResponse usuarioBanco = usuarioService.salvarUsuario(usuario,0L);
-            return ResponseEntity.ok(usuarioBanco);
-        }catch (Exception e){
-            return ResponseEntity.badRequest().body(e.getMessage());
-        }
+    // Cadastra GERENTE ou DEV conforme as permissões
+    @PostMapping
+    @Operation(summary = "Cadastrar usuário", description = "ADMIN pode cadastrar GERENTE ou DEV. GERENTE pode cadastrar apenas DEV"
+    )
+    public ResponseEntity<UsuarioResponse> criar(
+            @RequestBody UsuarioRequest usuario) {
+
+        // O ID 0 indica que será criado um novo usuário
+        UsuarioResponse usuarioBanco =
+                usuarioService.salvarUsuario(usuario, 0L);
+
+        // Retorna 201 Created quando o cadastro é realizado
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(usuarioBanco);
     }
 
-    @PatchMapping("/{id}/status")
-    @Operation(summary = "Metodo de atualização de status do usuario", description = "Metodo responsavel em atualizar apenas o status de um usuario especifico")
-    public ResponseEntity<Void> atualizarStatus(@PathVariable Long id, @RequestBody AtualizarStatusRequestUsuario statusRequest){
-        var atualizarUsuario = usuarioService.atualizarStatus(statusRequest.status(),id);
 
-        if(atualizarUsuario){
+    // Atualiza somente o status do usuário
+    @PatchMapping("/{id}/status")
+    @Operation(summary = "Atualizar status do usuário", description = "Altera o status respeitando as permissões do usuário logado"
+    )
+    public ResponseEntity<Void> atualizarStatus(
+            @PathVariable Long id,
+            @RequestBody AtualizarStatusRequestUsuario statusRequest) {
+
+        boolean atualizou = usuarioService.atualizarStatus(
+                statusRequest.status(), id
+        );
+
+        // Retorna 200 se o status foi atualizado
+        if (atualizou) {
             return ResponseEntity.ok().build();
         }
 
-        return  ResponseEntity.notFound().build();
+        // Retorna 404 se o usuário não existe
+        return ResponseEntity.notFound().build();
     }
 
+
+    // Atualiza os dados de um usuário existente
     @PutMapping("/{id}")
-    @Operation(summary = "Metodo de atualização de usuario", description = "Metodo responsavel em atualizar todos os dados de um usuario existente")
-    public ResponseEntity<?> atualizarUsuario(@PathVariable Long id, @RequestBody UsuarioRequest usuario){
-        try {
-            UsuarioResponse usuarioBanco = usuarioService.salvarUsuario(usuario,id);
+    @Operation(summary = "Atualizar usuário", description = "Atualiza os dados de um usuário respeitando as permissões"
+    )
+    public ResponseEntity<UsuarioResponse> atualizarUsuario(
+            @PathVariable Long id,
+            @RequestBody UsuarioRequest usuario) {
+
+        UsuarioResponse usuarioBanco =
+                usuarioService.salvarUsuario(usuario, id);
+
+        // Retorna 200 com os dados atualizados
+        if (usuarioBanco != null) {
             return ResponseEntity.ok(usuarioBanco);
-        }catch (Exception e) {
-            return ResponseEntity.badRequest().body(e.getMessage());
         }
-}
 
+        // Retorna 404 quando o usuário não existe
+        return ResponseEntity.notFound().build();
+    }
+
+
+    // Realiza a exclusão lógica do usuário
     @DeleteMapping("/{id}/excluir")
-    @Operation(summary = "Metodo de exclusão de usuario", description = "Metodo responsavel em efetuar a exclusão logica de um usuario, alterando seu status para EXCLUIDO")
-    public ResponseEntity<Void> excluir(@PathVariable Long id){
-            var atualizarUsuario = usuarioService.atualizarStatus(EnumStatusUsuario.EXCLUIDO,id);
+    @Operation(summary = "Excluir usuário", description = "Realiza a exclusão lógica alterando o status para EXCLUIDO"
+    )
+    public ResponseEntity<Void> excluir(@PathVariable Long id) {
 
-            if(atualizarUsuario) {
-                return ResponseEntity.ok().build();
-            }
-            return  ResponseEntity.notFound().build();
+        // Não apaga o registro do banco.
+        // Apenas altera seu status para EXCLUIDO.
+        boolean atualizou = usuarioService.atualizarStatus(
+                EnumStatusUsuario.EXCLUIDO, id
+        );
+
+        if (atualizou) {
+            return ResponseEntity.ok().build();
+        }
+
+        return ResponseEntity.notFound().build();
     }
 
+
+    // Retorna os dados do próprio usuário autenticado
     @GetMapping("/buscarusuariologado")
-    @Operation(summary = "Metodo de consulta de usuario logado", description = "Metodo responsavel em efetuar a busca de usuario logado")
-    public ResponseEntity<UsuarioResponse> buscarUsuarioLogado(){
+    @Operation(summary = "Buscar usuário logado", description = "Consulta os dados do usuário autenticado pelo JWT"
+    )
+    public ResponseEntity<UsuarioResponse> buscarUsuarioLogado() {
 
-        return  ResponseEntity.ok(usuarioService.BuscarUsuarioLogado());
+        UsuarioResponse usuarioBanco =
+                usuarioService.BuscarUsuarioLogado();
+
+        if (usuarioBanco != null) {
+            return ResponseEntity.ok(usuarioBanco);
+        }
+
+        return ResponseEntity.notFound().build();
     }
 
+
+    // Trata erros de permissão lançados pela Service
+    @ExceptionHandler(AccessDeniedException.class)
+    public ResponseEntity<String> acessoNegado(
+            AccessDeniedException e) {
+
+        // 403: usuário autenticado, mas sem permissão
+        return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                .body(e.getMessage());
+    }
+
+
+    // Trata erros de validação e regras de negócio
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ResponseEntity<String> dadosInvalidos(
+            IllegalArgumentException e) {
+
+        // 400: dados inválidos ou regra de negócio não atendida
+        return ResponseEntity.badRequest()
+                .body(e.getMessage());
+    }
 }

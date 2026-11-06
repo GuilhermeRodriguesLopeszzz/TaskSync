@@ -1,3 +1,4 @@
+
 package com.example.tasksync.presentation;
 
 import com.example.tasksync.application.dto.*;
@@ -7,123 +8,164 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
 @RestController
 @RequestMapping("/tarefa")
-@Tag(name = "Tarefa", description = "Grupo de APIs responsavel por controlar a estrutura de criação e consulta de tarefas do sistema!")
+@Tag(
+        name = "Tarefa",
+        description = "APIs responsáveis pelo gerenciamento de tarefas"
+)
 public class TarefaController {
 
     @Autowired
     private TarefaService tarefaService;
 
+
+    // Lista as tarefas conforme as permissões do usuário logado
     @GetMapping
-    @Operation(summary = "Metodo de consulta de lista de tarefas", description = "Lista as tarefas conforme as permissoes do usuario")
-    public ResponseEntity<?> listarTodos() {
+    @Operation(
+            summary = "Listar tarefas",
+            description = "Lista as tarefas respeitando as permissões de ADMIN, GERENTE e DEV"
+    )
+    public ResponseEntity<List<TarefaResponse>> listarTodos() {
 
-        try {
-            return ResponseEntity.ok(tarefaService.listarTodasTarefas());
-
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.badRequest().body(e.getMessage());
-        }
+        return ResponseEntity.ok(
+                tarefaService.listarTodasTarefas()
+        );
     }
 
+
+    // Cria uma nova tarefa e atribui a um desenvolvedor
     @PostMapping
-    @Operation(summary = "Metodo de criação de tarefa", description = "Cria uma tarefa e atribui a um desenvolvedor vinculado ao projeto")
-    public ResponseEntity<?> criar(@RequestBody TarefaRequest tarefa) {
+    @Operation(
+            summary = "Cadastrar tarefa",
+            description = "Cria uma tarefa e atribui a um desenvolvedor vinculado ao projeto"
+    )
+    public ResponseEntity<TarefaResponse> criar(
+            @RequestBody TarefaRequest tarefa) {
 
-        try {
-            // Envia os dados para o Service criar uma nova tarefa
-            TarefaResponse tarefaBanco = tarefaService.salvarTarefa(tarefa, 0L);
+        // O ID 0 indica que uma nova tarefa será criada
+        TarefaResponse tarefaBanco =
+                tarefaService.salvarTarefa(tarefa, 0L);
 
-            return ResponseEntity.status(HttpStatus.CREATED).body(tarefaBanco);
-
-        } catch (IllegalArgumentException e) {
-
-            // Retorna a mensagem caso alguma regra seja violada
-            return ResponseEntity.badRequest().body(e.getMessage());
-        }
+        // Retorna 201 Created quando a tarefa é cadastrada
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(tarefaBanco);
     }
 
+
+    // Busca uma tarefa específica pelo ID
     @GetMapping("/{id}")
-    @Operation(summary = "Metodo de consulta de tarefa por id", description = "Busca uma tarefa especifica pelo seu id")
-    public ResponseEntity<?> buscarPorId(@PathVariable Long id) {
+    @Operation(
+            summary = "Buscar tarefa por ID",
+            description = "Consulta uma tarefa específica respeitando as permissões"
+    )
+    public ResponseEntity<TarefaResponse> buscarPorId(
+            @PathVariable Long id) {
 
-        try {
-            TarefaResponse tarefaBanco = tarefaService.buscarPorId(id);
+        TarefaResponse tarefaBanco = tarefaService.buscarPorId(id);
 
-            if (tarefaBanco != null) {
-                return ResponseEntity.ok(tarefaBanco);
-            }
-
-            return ResponseEntity.notFound().build();
-
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.badRequest().body(e.getMessage());
+        // Retorna 200 quando encontrar a tarefa
+        if (tarefaBanco != null) {
+            return ResponseEntity.ok(tarefaBanco);
         }
+
+        // Retorna 404 se a tarefa não existir
+        return ResponseEntity.notFound().build();
     }
 
+
+    // Atualiza somente o status da tarefa
     @PatchMapping("/{id}/status")
-    @Operation(summary = "Metodo de atualização de status da tarefa", description = "Atualiza apenas o status de uma tarefa")
-    public ResponseEntity<?> atualizarStatus(
+    @Operation(
+            summary = "Atualizar status da tarefa",
+            description = "Altera o status de uma tarefa respeitando as permissões"
+    )
+    public ResponseEntity<Void> atualizarStatus(
             @PathVariable Long id,
             @RequestBody AtualizarStatusRequestTarefa statusRequest) {
 
-        try {
-            boolean atualizou = tarefaService.atualizarStatus(
-                    statusRequest.status(), id
-            );
+        // A Service verifica quem pode alterar o status
+        boolean atualizou = tarefaService.atualizarStatus(
+                statusRequest.status(), id
+        );
 
-            if (atualizou) {
-                return ResponseEntity.ok().build();
-            }
-
-            return ResponseEntity.notFound().build();
-
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.badRequest().body(e.getMessage());
+        // Retorna 200 se o status foi atualizado
+        if (atualizou) {
+            return ResponseEntity.ok().build();
         }
+
+        // Retorna 404 se a tarefa não existir
+        return ResponseEntity.notFound().build();
     }
 
+
+    // Atualiza os dados de uma tarefa existente
     @PutMapping("/{id}")
-    @Operation(summary = "Metodo de atualização de tarefa", description = "Atualiza os dados e o desenvolvedor responsavel pela tarefa")
-    public ResponseEntity<?> atualizarTarefa(
+    @Operation(
+            summary = "Atualizar tarefa",
+            description = "Atualiza os dados e o desenvolvedor responsável pela tarefa"
+    )
+    public ResponseEntity<TarefaResponse> atualizarTarefa(
             @PathVariable Long id,
             @RequestBody TarefaRequest tarefa) {
 
-        try {
-            TarefaResponse tarefaBanco = tarefaService.salvarTarefa(tarefa, id);
+        TarefaResponse tarefaBanco =
+                tarefaService.salvarTarefa(tarefa, id);
 
-            if (tarefaBanco != null) {
-                return ResponseEntity.ok(tarefaBanco);
-            }
-
-            return ResponseEntity.notFound().build();
-
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.badRequest().body(e.getMessage());
+        // Retorna 200 com os dados atualizados
+        if (tarefaBanco != null) {
+            return ResponseEntity.ok(tarefaBanco);
         }
+
+        // Retorna 404 se a tarefa não existir
+        return ResponseEntity.notFound().build();
     }
 
+
+    // Realiza a exclusão lógica da tarefa
     @DeleteMapping("/{id}/excluir")
-    @Operation(summary = "Metodo de exclusão de tarefa", description = "Efetua exclusão logica alterando o status para INTERROMPIDO")
-    public ResponseEntity<?> excluir(@PathVariable Long id) {
+    @Operation(
+            summary = "Excluir tarefa",
+            description = "Realiza a exclusão lógica alterando o status para EXCLUIDO"
+    )
+    public ResponseEntity<Void> excluir(@PathVariable Long id) {
 
-        try {
-            // Exclusão lógica: altera o status para EXCLUIDO
-            boolean atualizou = tarefaService.excluirTarefa(id);
+        // A Service verifica as permissões e altera o status
+        // O registro continua existindo no banco de dados
+        boolean atualizou = tarefaService.excluirTarefa(id);
 
-            if (atualizou) {
-                return ResponseEntity.ok().build();
-            }
-
-            return ResponseEntity.notFound().build();
-
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.badRequest().body(e.getMessage());
+        // Retorna 200 quando a tarefa for excluída logicamente
+        if (atualizou) {
+            return ResponseEntity.ok().build();
         }
+
+        // Retorna 404 se a tarefa não existir
+        return ResponseEntity.notFound().build();
+    }
+
+    // Trata erros de permissão lançados pela Service
+    @ExceptionHandler(AccessDeniedException.class)
+    public ResponseEntity<String> acessoNegado(
+            AccessDeniedException e) {
+
+        // 403: usuário autenticado, mas sem permissão
+        return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                .body(e.getMessage());
+    }
+
+
+    // Trata erros de validação e regras de negócio
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ResponseEntity<String> dadosInvalidos(
+            IllegalArgumentException e) {
+
+        // 400: dados inválidos ou regra de negócio não atendida
+        return ResponseEntity.badRequest()
+                .body(e.getMessage());
     }
 }
