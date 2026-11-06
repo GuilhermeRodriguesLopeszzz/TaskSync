@@ -2,7 +2,6 @@ package com.example.tasksync.presentation;
 
 import com.example.tasksync.application.dto.*;
 import com.example.tasksync.application.services.ProjetoService;
-import com.example.tasksync.application.services.TarefaService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;

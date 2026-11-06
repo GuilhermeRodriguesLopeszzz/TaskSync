@@ -27,8 +27,8 @@ public class Empresa {
 
     private String razaoSocial;
 
-    // Não permite duas empresas com o mesmo CNPJ
-    @Column(unique = true)
+    // Incorpora o Value Object CNPJ na entidade Empresa.
+    // A validação acontece no construtor da classe CNPJ.
     @Embedded
     private CNPJ cnpj;
 

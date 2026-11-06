@@ -1,10 +1,17 @@
 
 package com.example.tasksync.domain.valueobject;
 
+import jakarta.persistence.Column;
+import jakarta.persistence.Embeddable;
+
 import java.util.Locale;
 
+@Embeddable
 public class CNPJ {
 
+    // Armazena o CNPJ na tabela Empresa.
+    // Impede valores nulos e duplicados no banco de dados.
+    @Column(name = "cnpj", nullable = false, unique = true, length = 14)
     private String cnpj;
 
     public CNPJ() {
