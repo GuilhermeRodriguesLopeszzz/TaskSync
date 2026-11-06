@@ -266,8 +266,9 @@ public class ProjetoService {
             // Atualiza os dados do projeto
             projetoBanco.setNome(projeto.nome());
             projetoBanco.setDescricao(projeto.descricao());
-            projetoBanco.setDataInicio(projeto.dataInicio());
-            projetoBanco.setDataPrevistaFim(projeto.dataPrevistaFim());
+            projetoBanco.atualizarDatas(
+                    projeto.dataInicio(),
+                    projeto.dataPrevistaFim());
 
             projetoRepository.save(projetoBanco);
 

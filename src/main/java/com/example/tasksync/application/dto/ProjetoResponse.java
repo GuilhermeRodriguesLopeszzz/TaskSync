@@ -15,7 +15,8 @@ public record ProjetoResponse(
         EnumStatusProjeto status,
         LocalDate dataInicio,
         LocalDate dataPrevistaFim,
-        Set<Long> desenvolvedoreId
+        Long empresaId,
+        Set<Long> desenvolvedoresIds
 ) {
 
     public ProjetoResponse(Projeto projetoEntidade) {
@@ -26,6 +27,15 @@ public record ProjetoResponse(
                 projetoEntidade.getStatus(),
                 projetoEntidade.getDataInicio(),
                 projetoEntidade.getDataPrevistaFim(),
+
+                // Retorna o ID da empresa vinculada ao projeto.
+                // Caso não exista empresa, retorna null.
+                projetoEntidade.getEmpresa() != null
+                        ? projetoEntidade.getEmpresa().getId()
+                        : null,
+
+                // Percorre os desenvolvedores vinculados ao projeto
+                // e retorna somente seus IDs, sem expor os objetos completos.
                 projetoEntidade.getDesenvolvedores()
                         .stream()
                         .map(Usuario::getId)

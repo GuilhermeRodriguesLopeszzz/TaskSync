@@ -82,7 +82,7 @@ public class UsuarioController {
 
     @PatchMapping("/{id}/status")
     @Operation(summary = "Metodo de atualização de status do usuario", description = "Metodo responsavel em atualizar apenas o status de um usuario especifico")
-    public ResponseEntity<Void> atualizarStatus(@PathVariable Long id, @RequestBody AtualizarStatusRquest statusRequest){
+    public ResponseEntity<Void> atualizarStatus(@PathVariable Long id, @RequestBody AtualizarStatusRequestUsuario statusRequest){
         var atualizarUsuario = usuarioService.atualizarStatus(statusRequest.status(),id);
 
         if(atualizarUsuario){

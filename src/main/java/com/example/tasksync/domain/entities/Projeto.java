@@ -57,15 +57,36 @@ public class Projeto {
 
     private EnumStatusProjeto status = EnumStatusProjeto.MEDIA;
 
+    // Impede que o Lombok crie setters individuais para as datas.
+    // Assim, elas só podem ser alteradas pelo metodo atualizarDatas(),
+    // que verifica se a data final é anterior à inicial.
+    @Setter(AccessLevel.NONE)
     private LocalDate dataInicio;
 
+    @Setter(AccessLevel.NONE)
     private LocalDate dataPrevistaFim;
+
+    // Atualiza as duas datas do projeto de forma segura.
+// Impede que a data final seja anterior à data inicial.
+    public void atualizarDatas(LocalDate inicio, LocalDate fim) {
+
+        // Só compara se as duas datas estiverem preenchidas
+        if (inicio != null && fim != null && fim.isBefore(inicio)) {
+            throw new IllegalArgumentException(
+                    "A data final não pode ser anterior à data inicial!"
+            );
+        }
+
+        // Atualiza as datas somente após passar pela validação
+        this.dataInicio = inicio;
+        this.dataPrevistaFim = fim;
+    }
 
     public Projeto(ProjetoRequest projeto) {
         this.setNome(projeto.nome());
         this.setDescricao(projeto.descricao());
-        this.setDataInicio(projeto.dataInicio());
-        this.setDataPrevistaFim(projeto.dataPrevistaFim());
+        // Valida as datas antes de criar o projeto
+        this.atualizarDatas(projeto.dataInicio(), projeto.dataPrevistaFim());
     }
 
     // Atualiza o status do projeto

@@ -102,13 +102,6 @@ public class Usuario implements UserDetails {
         this.setRole(EnumRole.ROLE_GERENTE);
     }
 
-    public Usuario(CriarDevRequest usuarioDev) {
-        this.setCpf(new CPF(usuarioDev.cpf()));
-        this.setNome(usuarioDev.nome());
-        this.setSenha(usuarioDev.senha());
-        this.setEmail(usuarioDev.email());
-        this.setRole(EnumRole.ROLE_DEV);
-    }
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
