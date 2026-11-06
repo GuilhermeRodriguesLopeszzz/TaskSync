@@ -12,5 +12,6 @@ public interface EmpresaRepository extends JpaRepository<Empresa, Long> {
 
     Optional<List<Empresa>> findByStatusNot(EnumStatusEmpresa status);
 
+    boolean existsByCnpj(String cnpj);
 
 }

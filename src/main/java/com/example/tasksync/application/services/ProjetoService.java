@@ -200,21 +200,40 @@ public class ProjetoService {
             );
         }
 
-        // NOVO PROJETO
+
+// NOVO PROJETO
         if (id == 0L) {
 
-            // Verifica se o usuário possui empresa vinculada
-            if (usuarioLogado.empresaId() == null) {
-                throw new IllegalArgumentException(
-                        "Usuário não possui uma empresa vinculada!"
-                );
+            Empresa empresaBanco = null;
+
+            // ADMIN pode escolher em qual empresa criar o projeto
+            if (usuarioLogado.role() == EnumRole.ROLE_ADMIN) {
+
+                if (projeto.empresaId() == null) {
+                    throw new IllegalArgumentException(
+                            "Informe a empresa do projeto!"
+                    );
+                }
+
+                empresaBanco = empresaRepository.findById(
+                        projeto.empresaId()
+                ).orElse(null);
+
+            } else if (usuarioLogado.role() == EnumRole.ROLE_GERENTE) {
+
+                // GERENTE só pode criar projetos na própria empresa
+                if (usuarioLogado.empresaId() == null) {
+                    throw new IllegalArgumentException(
+                            "Gerente não possui empresa vinculada!"
+                    );
+                }
+
+                empresaBanco = empresaRepository.findById(
+                        usuarioLogado.empresaId()
+                ).orElse(null);
             }
 
-            // Busca a empresa do usuário autenticado
-            Empresa empresaBanco = empresaRepository.findById(
-                    usuarioLogado.empresaId()
-            ).orElse(null);
-
+            // Verifica se a empresa existe
             if (empresaBanco == null) {
                 throw new IllegalArgumentException(
                         "Empresa não encontrada!"
@@ -224,7 +243,7 @@ public class ProjetoService {
             // Cria o projeto
             Projeto projetoBanco = new Projeto(projeto);
 
-            // Vincula o projeto à empresa
+            // Vincula o projeto à empresa validada
             projetoBanco.setEmpresa(empresaBanco);
 
             // Salva no banco

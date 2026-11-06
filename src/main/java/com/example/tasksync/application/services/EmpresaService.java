@@ -26,8 +26,16 @@ public class EmpresaService {
 
     public EmpresaResponse salvarEmpresa(EmpresaRequest empresa, Long id) {
 
-        //Nova Empresa
+        // Nova Empresa
         if (id == 0L) {
+
+            // Verifica se já existe uma empresa com o CNPJ informado
+            if (empresaRepository.existsByCnpj(empresa.cnpj())) {
+                throw new IllegalArgumentException(
+                        "Já existe uma empresa cadastrada com este CNPJ!"
+                );
+            }
+
             Empresa empresaBanco = new Empresa(empresa);
             empresaRepository.save(empresaBanco);
 

@@ -1,3 +1,4 @@
+
 package com.example.tasksync.application.services;
 
 import com.example.tasksync.application.dto.*;
@@ -11,6 +12,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
@@ -29,219 +31,378 @@ public class UsuarioService {
     @Value("${spring.secret}")
     private String secret;
 
-    public LoginResponse validarUsuarioAutenticadoERetornaToken( LoginRequest loginRequest ){
+    public LoginResponse validarUsuarioAutenticadoERetornaToken(LoginRequest loginRequest) {
 
-
-        if(usuarioRepository.existsUsuarioByEmailAndSenha(loginRequest.email(), loginRequest.senha())){
+        if (usuarioRepository.existsUsuarioByEmailAndSenha(
+                loginRequest.email(), loginRequest.senha())) {
 
             var token = tokenService.gerarToken(loginRequest);
             return new LoginResponse(token);
         }
+
         return null;
     }
 
+    // Retorna o usuário autenticado pelo JWT
     public UsuarioLogado getUsuarioLogado() {
-        return (UsuarioLogado) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        return (UsuarioLogado) SecurityContextHolder
+                .getContext()
+                .getAuthentication()
+                .getPrincipal();
     }
 
+    // Verifica se o usuário logado pode acessar o usuário informado
+    private void verificarPermissaoUsuario(
+            Usuario usuarioBanco,
+            UsuarioLogado usuarioLogado) {
 
-    public List<UsuarioResponse> ListarTodosUsuariosTable(){
-
-        var usuarioLogado = getUsuarioLogado();
-
-        if(usuarioLogado.empresaId() ==null){
-            return  usuarioRepository.findAll()
-                    .stream()
-                    .map(UsuarioResponse::new)
-                    .toList();
-        }
-
-        return  usuarioRepository.getUsuariosByEmpresa_Id(usuarioLogado.empresaId())
-                .stream()
-                .map(UsuarioResponse::new)
-                .toList();
-    }
-
-    public CriarAdminResponse criarAdmin(CriarAdminRequest criarAdminRequest) {
-
-        if(!criarAdminRequest.secretKey().equals(secret)){
-            return new CriarAdminResponse(0L,"Usuario Salvo com sucesso!");
-
-        }
-
-        Usuario usuarioAdminSalvar = new Usuario(criarAdminRequest);
-        usuarioRepository.save(usuarioAdminSalvar);
-
-        return new CriarAdminResponse(usuarioAdminSalvar.getId(),"Usuario Salvo com sucesso!");
-    }
-
-
-
-    public UsuarioResponse salvarUsuario(UsuarioRequest usuario, Long id) {
-
-        // Recupera os dados do usuário que está autenticado no sistema
-        var usuarioLogado = getUsuarioLogado();
-
-        // Variáveis que receberão a empresa e a role do novo usuário
-        Empresa empresa = null;
-        EnumRole role = null;
-
-        // Verifica se quem está realizando a operação é ADMIN
+        // ADMIN pode acessar usuários de qualquer empresa
         if (usuarioLogado.role() == EnumRole.ROLE_ADMIN) {
+            return;
+        }
 
-            // ADMIN pode escolher a empresa pelo ID enviado no cadastro
-            if (usuario.empresaId() == null) {
-                throw new RuntimeException("Informe uma empresa.");
-            }
+        // GERENTE só pode acessar desenvolvedores da própria empresa
+        if (usuarioLogado.role() == EnumRole.ROLE_GERENTE) {
 
-            empresa = empresaRepository.findById(usuario.empresaId()).orElse(null);
+            if (usuarioLogado.empresaId() == null ||
+                    usuarioBanco.getEmpresa() == null ||
+                    !usuarioLogado.empresaId().equals(
+                            usuarioBanco.getEmpresa().getId())) {
 
-            // ADMIN pode criar GERENTE ou DEV
-            if (usuario.role() == EnumRole.ROLE_GERENTE ||
-                    usuario.role() == EnumRole.ROLE_DEV) {
-
-                role = usuario.role();
-
-            } else {
-                throw new AccessDeniedException("Tipo de usuário inválido.");
-            }
-
-        } else if (usuarioLogado.role() == EnumRole.ROLE_GERENTE) {
-
-            // GERENTE só pode criar desenvolvedores
-            if (usuario.role() != EnumRole.ROLE_DEV) {
                 throw new AccessDeniedException(
-                        "Gerente só pode cadastrar desenvolvedores."
+                        "Gerente não pode acessar usuários de outra empresa!"
                 );
             }
 
-            // O desenvolvedor será vinculado à empresa do próprio gerente
-            empresa = empresaRepository.findById(usuarioLogado.empresaId()).orElse(null);
+            if (usuarioBanco.getRole() != EnumRole.ROLE_DEV) {
 
-            // Define a role como DEV, sem depender de outros valores
-            // enviados pelo frontend
-            role = EnumRole.ROLE_DEV;
+                throw new AccessDeniedException(
+                        "Gerente só pode gerenciar desenvolvedores!"
+                );
+            }
+
+            return;
+        }
+
+        throw new AccessDeniedException(
+                "Usuário sem permissão para acessar outros usuários!"
+        );
+    }
+
+    // Lista os usuários conforme o perfil
+    public List<UsuarioResponse> ListarTodosUsuariosTable() {
+
+        UsuarioLogado usuarioLogado = getUsuarioLogado();
+
+        // ADMIN visualiza todos os usuários
+        if (usuarioLogado.role() == EnumRole.ROLE_ADMIN) {
+
+            return usuarioRepository.findAll()
+                    .stream()
+                    .map(UsuarioResponse::new)
+                    .toList();
+
+        } else if (usuarioLogado.role() == EnumRole.ROLE_GERENTE) {
+
+            // GERENTE visualiza somente desenvolvedores da sua empresa
+            if (usuarioLogado.empresaId() == null) {
+                throw new AccessDeniedException(
+                        "Gerente não possui empresa vinculada!"
+                );
+            }
+
+            return usuarioRepository
+                    .getUsuariosByEmpresa_Id(usuarioLogado.empresaId())
+                    .stream()
+                    .filter(usuario -> usuario.getRole() == EnumRole.ROLE_DEV)
+                    .map(UsuarioResponse::new)
+                    .toList();
 
         } else {
 
-            // Outros perfis, como DEV, não podem cadastrar usuários
             throw new AccessDeniedException(
-                    "Seu perfil não tem permissão para realizar esta operação."
+                    "Usuário sem permissão para listar usuários!"
+            );
+        }
+    }
+
+    // Cadastro inicial do administrador
+
+    public CriarAdminResponse criarAdmin(CriarAdminRequest criarAdminRequest) {
+
+        // Valida a chave secreta
+        if (criarAdminRequest == null ||
+                criarAdminRequest.secretKey() == null ||
+                !criarAdminRequest.secretKey().equals(secret)) {
+
+            throw new IllegalArgumentException(
+                    "Chave secreta inválida!"
             );
         }
 
-        // Verifica se a empresa informada ou vinculada foi encontrada
-        if (empresa == null) {
-            throw new RuntimeException("Empresa não encontrada.");
+        // Permite o cadastro inicial somente quando não existe administrador
+        boolean existeAdmin = usuarioRepository.findAll()
+                .stream()
+                .anyMatch(usuario ->
+                        usuario.getRole() == EnumRole.ROLE_ADMIN
+                );
+
+        if (existeAdmin) {
+            throw new IllegalArgumentException(
+                    "Já existe um administrador cadastrado!"
+            );
         }
 
-        // Verifica se a operação é uma criação de usuário
+        Usuario usuarioAdminSalvar = new Usuario(criarAdminRequest);
+
+        usuarioRepository.save(usuarioAdminSalvar);
+
+        return new CriarAdminResponse(
+                usuarioAdminSalvar.getId(),
+                "Usuário salvo com sucesso!"
+        );
+    }
+
+    // Cria ou atualiza usuários
+    public UsuarioResponse salvarUsuario(UsuarioRequest usuario, Long id) {
+
+        UsuarioLogado usuarioLogado = getUsuarioLogado();
+
+        // Apenas ADMIN e GERENTE podem cadastrar ou editar usuários
+        if (usuarioLogado.role() != EnumRole.ROLE_ADMIN &&
+                usuarioLogado.role() != EnumRole.ROLE_GERENTE) {
+
+            throw new AccessDeniedException(
+                    "Usuário sem permissão para cadastrar ou editar usuários!"
+            );
+        }
+
+        if (usuario == null) {
+            throw new IllegalArgumentException(
+                    "Informe os dados do usuário!"
+            );
+        }
+
+        // NOVO USUÁRIO
         if (id == 0L) {
 
-            // Cria uma nova entidade de usuário
+            Empresa empresa = null;
+            EnumRole role = null;
+
+            if (usuarioLogado.role() == EnumRole.ROLE_ADMIN) {
+
+                // ADMIN escolhe a empresa
+                if (usuario.empresaId() == null) {
+                    throw new IllegalArgumentException(
+                            "Informe uma empresa!"
+                    );
+                }
+
+                empresa = empresaRepository.findById(
+                        usuario.empresaId()
+                ).orElse(null);
+
+                // ADMIN pode criar GERENTE ou DEV
+                if (usuario.role() == EnumRole.ROLE_GERENTE ||
+                        usuario.role() == EnumRole.ROLE_DEV) {
+
+                    role = usuario.role();
+
+                } else {
+                    throw new IllegalArgumentException(
+                            "Tipo de usuário inválido!"
+                    );
+                }
+
+            } else if (usuarioLogado.role() == EnumRole.ROLE_GERENTE) {
+
+                // GERENTE só pode cadastrar ROLE_DEV
+                if (usuario.role() != EnumRole.ROLE_DEV) {
+                    throw new AccessDeniedException(
+                            "Gerente só pode cadastrar desenvolvedores!"
+                    );
+                }
+
+                if (usuarioLogado.empresaId() == null) {
+                    throw new IllegalArgumentException(
+                            "Gerente não possui empresa vinculada!"
+                    );
+                }
+
+                // Usa a empresa do gerente, não a enviada no Request
+                empresa = empresaRepository.findById(
+                        usuarioLogado.empresaId()
+                ).orElse(null);
+
+                role = EnumRole.ROLE_DEV;
+            }
+
+            if (empresa == null) {
+                throw new IllegalArgumentException(
+                        "Empresa não encontrada!"
+                );
+            }
+
             Usuario usuarioBanco = new Usuario(usuario);
 
-            // Define a empresa e o perfil que foram validados acima
             usuarioBanco.setEmpresa(empresa);
             usuarioBanco.setRole(role);
 
-            // Salva o novo usuário no banco de dados
             usuarioRepository.save(usuarioBanco);
 
-            // Retorna os dados do usuário cadastrado
             return new UsuarioResponse(usuarioBanco);
 
         } else {
 
-            // Busca o usuário que será atualizado
-            Usuario usuarioBanco = usuarioRepository.findById(id).orElse(null);
+            // USUÁRIO EXISTENTE
 
-            // Verifica se o usuário existe
+            Usuario usuarioBanco = usuarioRepository.findById(id)
+                    .orElse(null);
+
             if (usuarioBanco == null) {
-                throw new RuntimeException("Usuário não encontrado.");
+                return null;
             }
 
-            // GERENTE só pode alterar usuários pertencentes à própria empresa
-            if (usuarioLogado.role() == EnumRole.ROLE_GERENTE &&
-                    (usuarioBanco.getEmpresa() == null ||
-                            !usuarioBanco.getEmpresa().getId().equals(usuarioLogado.empresaId()))) {
+            // Verifica a permissão sobre o usuário existente
+            verificarPermissaoUsuario(usuarioBanco, usuarioLogado);
 
+            // Não permite editar ADMIN por esta rota
+            if (usuarioBanco.getRole() == EnumRole.ROLE_ADMIN) {
                 throw new AccessDeniedException(
-                        "Você não pode alterar usuários de outra empresa."
+                        "Administrador não pode ser alterado por esta rota!"
                 );
             }
 
-            // Atualiza os dados básicos do usuário
+            // Somente ADMIN pode transferir usuários de empresa
+            if (usuarioLogado.role() == EnumRole.ROLE_ADMIN) {
+
+                if (usuario.empresaId() == null) {
+                    throw new IllegalArgumentException(
+                            "Informe uma empresa!"
+                    );
+                }
+
+                Empresa empresaBanco = empresaRepository.findById(
+                        usuario.empresaId()
+                ).orElse(null);
+
+                if (empresaBanco == null) {
+                    throw new IllegalArgumentException(
+                            "Empresa não encontrada!"
+                    );
+                }
+
+                // Não permite trocar a empresa de um DEV
+                // que já participa de projetos
+                if (usuarioBanco.getRole() == EnumRole.ROLE_DEV &&
+                        usuarioBanco.getEmpresa() != null &&
+                        !usuarioBanco.getEmpresa().getId().equals(
+                                empresaBanco.getId()) &&
+                        !usuarioBanco.getProjetos().isEmpty()) {
+
+                    throw new IllegalArgumentException(
+                            "Desvincule o desenvolvedor dos projetos antes de mudar sua empresa!"
+                    );
+                }
+
+                usuarioBanco.setEmpresa(empresaBanco);
+
+            } else if (usuarioLogado.role() == EnumRole.ROLE_GERENTE) {
+
+                // GERENTE não pode transferir desenvolvedores
+                // para outra empresa
+                if (usuario.empresaId() != null &&
+                        !usuario.empresaId().equals(
+                                usuarioLogado.empresaId())) {
+
+                    throw new AccessDeniedException(
+                            "Gerente não pode transferir usuários para outra empresa!"
+                    );
+                }
+
+                // Mantém a empresa original do desenvolvedor
+            }
+
+            // Atualiza os dados básicos
             usuarioBanco.setNome(usuario.nome());
             usuarioBanco.setCpf(new CPF(usuario.cpf()));
             usuarioBanco.setEmail(usuario.email());
 
-            // Atualiza a senha somente se uma nova senha foi informada
-            if (usuario.senha() != null && !usuario.senha().isBlank()) {
+            // Só altera a senha quando uma nova senha é informada
+            if (usuario.senha() != null &&
+                    !usuario.senha().isBlank()) {
+
                 usuarioBanco.setSenha(usuario.senha());
             }
 
-            // Atualiza a empresa conforme as regras de permissão
-            usuarioBanco.setEmpresa(empresa);
-
-            // Não altera a role durante a edição
-            // Assim, o usuário não consegue mudar o próprio perfil pelo request
-
-            // Salva as alterações no banco
+            // A role permanece igual durante a edição
             usuarioRepository.save(usuarioBanco);
 
-            // Retorna os dados atualizados
             return new UsuarioResponse(usuarioBanco);
         }
     }
 
-
-
-    /* public CriarDevResponse criarDev(CriarDevRequest criarDevRequest) {
-
-        Usuario usuarioDevSalvar = new Usuario(criarDevRequest);
-        usuarioRepository.save(usuarioDevSalvar);
-
-        return new CriarDevResponse(usuarioDevSalvar.getId(),"Usuario Salvo com sucesso!");
-    } */
-
+    // Busca usuário por ID respeitando as permissões
     public UsuarioResponse buscarPorId(Long id) {
 
-        var usuario = usuarioRepository.findById(id).orElse(null);
-        if(usuario == null){
+        UsuarioLogado usuarioLogado = getUsuarioLogado();
+
+        Usuario usuarioBanco = usuarioRepository.findById(id)
+                .orElse(null);
+
+        if (usuarioBanco == null) {
             return null;
         }
 
-        return new UsuarioResponse(usuario);
+        verificarPermissaoUsuario(usuarioBanco, usuarioLogado);
 
-
+        return new UsuarioResponse(usuarioBanco);
     }
 
-    public boolean atualizarStatus(EnumStatusUsuario status,Long id) {
+    // Atualiza o status de um usuário
+    public boolean atualizarStatus(EnumStatusUsuario status, Long id) {
 
-        Usuario usuarioBanco = usuarioRepository.findById(id).orElse(null);
-        if(usuarioBanco!= null ){
-            usuarioBanco.setStatus(status);
-            usuarioRepository.save(usuarioBanco);
-            return  true;
+        UsuarioLogado usuarioLogado = getUsuarioLogado();
+
+        if (status == null) {
+            throw new IllegalArgumentException(
+                    "Informe o status do usuário!"
+            );
         }
-        return false;
 
+        Usuario usuarioBanco = usuarioRepository.findById(id)
+                .orElse(null);
+
+        if (usuarioBanco == null) {
+            return false;
+        }
+
+        // Verifica a empresa e o perfil do usuário
+        verificarPermissaoUsuario(usuarioBanco, usuarioLogado);
+
+        // Impede a alteração de status do administrador
+        if (usuarioBanco.getRole() == EnumRole.ROLE_ADMIN) {
+            throw new AccessDeniedException(
+                    "Não é permitido alterar o status do administrador!"
+            );
+        }
+
+        usuarioBanco.setStatus(status);
+
+        usuarioRepository.save(usuarioBanco);
+
+        return true;
     }
 
+    // Busca os dados do próprio usuário autenticado
     public UsuarioResponse BuscarUsuarioLogado() {
-        try {
-            var usuarioLogado = getUsuarioLogado();
-            return usuarioRepository.findById(usuarioLogado.id())
-                    .stream()
-                    //vai instanciar o contstrutor para construir o usuario response
-                    .map(UsuarioResponse::new)
-                    .findFirst()
-                    .orElse(null);
 
-        } catch (Exception e) {
-            throw new RuntimeException("Erro ao buscar usuario logado");
-        }
+        UsuarioLogado usuarioLogado = getUsuarioLogado();
 
+        return usuarioRepository.findById(usuarioLogado.id())
+                .stream()
+                .map(UsuarioResponse::new)
+                .findFirst()
+                .orElse(null);
     }
 }
