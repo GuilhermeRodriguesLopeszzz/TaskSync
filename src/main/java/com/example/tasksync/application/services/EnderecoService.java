@@ -1,6 +1,7 @@
 package com.example.tasksync.application.services;
 
 import com.example.tasksync.application.dto.EnderecoResponse;
+import com.example.tasksync.domain.interfaces.IViaCepExternalRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
