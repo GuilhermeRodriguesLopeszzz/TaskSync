@@ -1,58 +1,102 @@
-"use client"
+"use client";
 
 import Link from "next/link";
-
 import { useParams, useRouter } from "next/navigation";
-import DesenvolvedorForm from "../../components/DesenvolvedorForm";
 import { useEffect, useState } from "react";
+
+import DesenvolvedorForm from "../../components/DesenvolvedorForm";
 import { Desenvolvedor } from "@/app/(sistema)/types/desenvolvedor";
 import { consultaDesenvolvedorPorId } from "@/app/services/desenvolvedorService";
 
 
-export default function EditarDesenvolvedor(){
+export default function EditarDesenvolvedor() {
+
     const parametro = useParams();
 
-    const codigo = Number (parametro.codigo);
+    const codigo = Number(parametro.codigo);
 
-     const router = useRouter();
+    const router = useRouter();
 
-    const [desenvolvedor, setDesenvolvedor] = useState<Desenvolvedor|null>(null)
+    const [desenvolvedor, setDesenvolvedor] = useState<Desenvolvedor | null>(null);
+
 
     useEffect(() => {
 
         buscarDados();
-}, []);
+
+    }, [codigo]);
 
 
-const buscarDados = async()=>{
+    const buscarDados = async () => {
 
-    const valorDesenvolvedorBack = await consultaDesenvolvedorPorId(codigo);
+        try {
 
-    if (valorDesenvolvedorBack){
-        setDesenvolvedor(valorDesenvolvedorBack);
-    }else{
-        router.push("/desenvolvedor")
-    }
-    
-}
+            var valorDesenvolvedorBack = await consultaDesenvolvedorPorId(codigo);
 
-if (!desenvolvedor) return (<div className="p-8">Carregando dados</div>);
+            if (valorDesenvolvedorBack) {
+
+                setDesenvolvedor(valorDesenvolvedorBack);
+
+            } else {
+
+                router.push("/desenvolvedor");
+            }
+
+        } catch (error) {
+
+            alert("Erro ao carregar desenvolvedor!");
+            router.push("/desenvolvedor");
+        }
+    };
 
 
-    return(
-        <div className="w-full px-6 py-10 md:px-10 md:py-14">
-            <div className="max-w-4xl mx-auto">
-                <div className="mb-10">
-                    <Link href="/desenvolvedor" className="inline-flex items-center gap-1.5 text-sm text-zinc-500 hover:text-amber-400 transition-colors font-medium"> Voltar para Listagem</Link>
-                    <div className="mt-5">
-                        <h1 className="text-2xl sm:text-3xl font-bold text-white tracking-tight">Editar desenvolvedor {codigo}</h1>
-                        <p className="mt-1.5 text-sm text-zinc-400">Preencha os dados para editar um novo desenvolvedor</p>
-                    </div>
-                </div>
-                <div className="bg-white/[0.03] border border-white/10 rounded-2xl shadow-xl shadow-black/30 p-6 sm:p-8">
-                    <DesenvolvedorForm desenvolvedorExistente={desenvolvedor}/>
-                </div>
+    if (!desenvolvedor) {
+        return (
+            <div className="p-8 text-zinc-400">
+                Carregando dados...
             </div>
+        );
+    }
+
+
+    return (
+
+        <div className="w-full px-6 py-10 md:px-10 md:py-14">
+
+            <div className="max-w-4xl mx-auto">
+
+                <div className="mb-10">
+
+                    <Link
+                        href="/desenvolvedor"
+                        className="inline-flex items-center gap-1.5 text-sm text-zinc-500 hover:text-amber-400 transition-colors font-medium"
+                    >
+                        Voltar para Listagem
+                    </Link>
+
+                    <div className="mt-5">
+
+                        <h1 className="text-2xl sm:text-3xl font-bold text-white tracking-tight">
+                            Editar desenvolvedor {codigo}
+                        </h1>
+
+                        <p className="mt-1.5 text-sm text-zinc-400">
+                            Preencha os dados para editar o desenvolvedor
+                        </p>
+
+                    </div>
+
+                </div>
+
+
+                <div className="bg-white/[0.03] border border-white/10 rounded-2xl shadow-xl shadow-black/30 p-6 sm:p-8">
+
+                    <DesenvolvedorForm desenvolvedorExistente={desenvolvedor} />
+
+                </div>
+
+            </div>
+
         </div>
     );
 }

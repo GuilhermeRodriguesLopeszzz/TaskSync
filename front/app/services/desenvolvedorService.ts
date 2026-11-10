@@ -1,64 +1,84 @@
-import { Desenvolvedor } from "../(sistema)/types/desenvolvedor";
+import { Desenvolvedor, DesenvolvedorRequest } from "../(sistema)/types/desenvolvedor";
 import api from "./api";
 
 
+export async function buscarListaDesenvolvedores(): Promise<Desenvolvedor[]> {
 
-export async function buscarListaDesenvolvedores() : Promise<Desenvolvedor[]> {
+    var dados = await api.get<Desenvolvedor[]>("/usuarios");
 
-    const dados = await api.get<Desenvolvedor[]>("/desenvolvedor");
-
-    if(dados.status == 200){
-        return dados.data;
+    if (dados.status == 200) {
+        return dados.data.filter(usuario => usuario.role === "ROLE_DEV");
     }
 
     return [];
-    
 }
 
 
-export async function deletarDesenvolvedor(id:number) : Promise<number>{
+export async function deletarDesenvolvedor(id: number): Promise<number> {
 
- var dados = await api.delete('/desenvolvedor/'+id+'/excluir');
+    var dados = await api.delete("/usuarios/" + id + "/excluir");
+
     return dados.status;
 }
 
 
-export async function atualizarStatusDesenvolvedor(desenvolvedor:Desenvolvedor) :Promise<void>{
-   
+export async function atualizarStatusDesenvolvedor(desenvolvedor: Desenvolvedor): Promise<void> {
+
     var novoStatus = {};
-    if(desenvolvedor.status ==="ATIVO"){
-        novoStatus = {status:"BLOQUEADO"}
-    }else{
-        novoStatus = {status:"ATIVO"}
+
+    if (desenvolvedor.status === "ATIVO") {
+        novoStatus = { status: "BLOQUEADO" };
+    } else {
+        novoStatus = { status: "ATIVO" };
     }
 
-    var dadosRetorno = await  
-    api.patch('/desenvolvedor/'+desenvolvedor.id+'/status',novoStatus);
+    var dadosRetorno = await api.patch(
+        "/usuarios/" + desenvolvedor.id + "/status",
+        novoStatus
+    );
 
-    if(dadosRetorno.status==200){
-        alert("Atualizado status com sucesso!");
-    }else{
-        alert(dadosRetorno.data);
-
-        return;
-    } 
-}
-
-export async function consultaDesenvolvedorPorId(id:number):Promise<Desenvolvedor>{
-    const valorDesenvolvedorBack = await api.get<Desenvolvedor>('/desenvolvedor/'+id);
-    return valorDesenvolvedorBack.data;
-
-}
-
-export async function  atualizarDesenvolvedor (desenvolvedor:Desenvolvedor): Promise<number>{
-    var dadosRetorno = await  
-    api.put<number>('/desenvolvedor/'+desenvolvedor.id,desenvolvedor);
-    return dadosRetorno.data;
+    if (dadosRetorno.status == 200) {
+        alert("Status atualizado com sucesso!");
+    } else {
+        alert("Erro ao atualizar o status!");
+    }
 }
 
 
-export async function  salvarDesenvolvedor (desenvolvedor:Desenvolvedor): Promise<number>{
-    var dadosRetorno = await  
-    api.post<number>('/desenvolvedor',desenvolvedor);
-    return dadosRetorno.data;
+export async function consultaDesenvolvedorPorId(id: number): Promise<Desenvolvedor> {
+
+    var dados = await api.get<Desenvolvedor>("/usuarios/" + id);
+
+    if (dados.data.role != "ROLE_DEV") {
+        throw new Error("Este usuário não é um desenvolvedor!");
+    }
+
+    return dados.data;
+}
+
+
+export async function atualizarDesenvolvedor(
+    id: number,
+    desenvolvedor: DesenvolvedorRequest
+): Promise<number> {
+
+    var dadosRetorno = await api.put(
+        "/usuarios/" + id,
+        desenvolvedor
+    );
+
+    return dadosRetorno.status;
+}
+
+
+export async function salvarDesenvolvedor(
+    desenvolvedor: DesenvolvedorRequest
+): Promise<number> {
+
+    var dadosRetorno = await api.post(
+        "/usuarios",
+        desenvolvedor
+    );
+
+    return dadosRetorno.status;
 }

@@ -5,7 +5,9 @@ export class Usuario {
     public email: string,
     public status: string,
     public cpf: string,
-    public senha: string
+    public senha: string,
+    public empresaId?: number | null,
+    public role?: "ROLE_ADMIN" | "ROLE_GERENTE" | "ROLE_DEV"
   ) {}
 }
 
