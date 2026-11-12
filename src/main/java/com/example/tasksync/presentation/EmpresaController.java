@@ -38,6 +38,12 @@ public class EmpresaController {
         );
     }
 
+    // TESTE TEMPORÁRIO PARA APRESENTAÇÃO
+    @GetMapping("/teste-seguranca")
+    public ResponseEntity<String> testarSeguranca() {
+        return ResponseEntity.ok("Acesso permitido!");
+    }
+
 
     // Cadastra uma nova empresa
     @PostMapping
