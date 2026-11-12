@@ -192,14 +192,10 @@ public class UsuarioService {
         }
     }
 
-    // Cadastro inicial do administrador
-
     @Transactional
     public CriarAdminResponse criarAdmin(CriarAdminRequest criarAdminRequest) {
 
-        // Se a chave secreta estiver errada ou não for informada,
-        // retorna uma mensagem de sucesso, mas não salva o usuário.
-        // Isso evita revelar diretamente se a chave está correta.
+        // Verifica se a chave secreta está correta
         if (criarAdminRequest == null ||
                 criarAdminRequest.secretKey() == null ||
                 !criarAdminRequest.secretKey().equals(secret)) {
@@ -207,28 +203,15 @@ public class UsuarioService {
             return new CriarAdminResponse(0L, "Usuário salvo com sucesso!");
         }
 
-        // Verifica se já existe um administrador cadastrado
-        boolean existeAdmin = usuarioRepository.findAll()
-                .stream()
-                .anyMatch(usuario ->
-                        usuario.getRole() == EnumRole.ROLE_ADMIN
-                );
-
-        if (existeAdmin) {
-            throw new IllegalArgumentException(
-                    "Já existe um administrador cadastrado!"
-            );
-        }
-
-        // Garante que o primeiro administrador não use um e-mail já cadastrado.
+        // Verifica se o e-mail já está cadastrado
         verificarEmailDisponivel(criarAdminRequest.email(), null);
 
-        // Cria e salva o administrador quando a chave é válida
+        // Cria o administrador
         Usuario usuarioAdminSalvar = new Usuario(criarAdminRequest);
+
+        // Salva no banco
         usuarioRepository.save(usuarioAdminSalvar);
 
-        // Retorna a mesma resposta para não revelar
-        // se o cadastro realmente aconteceu.
         return new CriarAdminResponse(0L, "Usuário salvo com sucesso!");
     }
 
