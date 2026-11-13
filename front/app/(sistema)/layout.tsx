@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useSelector } from "react-redux";
@@ -14,13 +15,13 @@ export default function SistemaLayout({ children }: { children: React.ReactNode 
     const router = useRouter();
 
     useEffect(() => {
-        // Sem autenticação, manda o usuário para o login.
+        // Redireciona para login se não estiver autenticado
         if (usuario == null || !token) {
             router.replace("/login");
         }
     }, [usuario, token, router]);
 
-    // Não mostra o painel enquanto o usuário não estiver autenticado.
+    // Impede que o painel apareça sem autenticação
     if (usuario == null || !token) {
         return null;
     }

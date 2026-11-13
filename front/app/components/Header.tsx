@@ -1,11 +1,14 @@
-import { useDispatch } from "react-redux";
-import { store } from "../redux/store";
+import { useDispatch, useSelector } from "react-redux";
+import { RootState } from "../redux/store";
 import { logout } from "../redux/slice/authSlice";
 
 export default function Header() {
 
 
-  const usuario = store.getState().auth.usuario;
+
+  const usuario = useSelector(
+    (state: RootState) => state.auth.usuario
+  );
   const dispatch = useDispatch();
 
   return (
