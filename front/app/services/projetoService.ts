@@ -54,15 +54,24 @@ export async function consultaProjetoPorId(id:number):Promise<Projeto>{
 
 }
 
-export async function  atualizarProjeto (projeto:Projeto): Promise<number>{
-    var dadosRetorno = await  
-    api.put<number>('/projetos/'+projeto.id,projeto);
+export async function  atualizarProjeto (projeto:Projeto): Promise<Projeto>{
+    var dadosRetorno = await
+    api.put<Projeto>('/projetos/'+projeto.id,projeto);
     return dadosRetorno.data;
 }
 
 
-export async function  salvarProjeto (projeto:Projeto): Promise<number>{
-    var dadosRetorno = await  
-    api.post<number>('/projetos',projeto);
+export async function  salvarProjeto (projeto:Projeto): Promise<Projeto>{
+    var dadosRetorno = await
+    api.post<Projeto>('/projetos',projeto);
+    return dadosRetorno.data;
+}
+
+// Vincula um desenvolvedor já cadastrado a um projeto existente.
+export async function vincularDesenvolvedorProjeto(projetoId: number, desenvolvedorId: number): Promise<Projeto> {
+    var dadosRetorno = await api.post<Projeto>(
+        '/projetos/' + projetoId + '/desenvolvedores',
+        { desenvolvedorId: desenvolvedorId }
+    );
     return dadosRetorno.data;
 }
