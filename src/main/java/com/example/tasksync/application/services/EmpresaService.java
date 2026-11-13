@@ -124,45 +124,28 @@ public class EmpresaService {
     // Altera o status ou realiza a exclusão lógica da empresa.
     @Transactional
     public boolean atualizarStatus(EnumStatusEmpresa status, Long id) {
+        // Somente administradores ativos podem alterar empresas
         verificarAdministradorAtivo();
 
-        // Não aceita status nulo.
         if (status == null) {
-            throw new IllegalArgumentException("Informe o status da empresa!");
+            throw new IllegalArgumentException(
+                    "Informe o status da empresa!"
+            );
         }
 
-        Empresa empresaBanco = empresaRepository.findById(id).orElse(null);
+        // Busca a empresa
+        Empresa empresaBanco = empresaRepository.findById(id)
+                .orElse(null);
 
-        // Não permite alterar empresas inexistentes ou já excluídas.
+        // Não permite alterar empresas inexistentes ou excluídas
         if (empresaBanco == null ||
                 empresaBanco.getStatus() == EnumStatusEmpresa.EXCLUIDO) {
             return false;
         }
 
-        if (status == EnumStatusEmpresa.EXCLUIDO) {
-            // Antes de excluir a empresa, todos os projetos devem estar excluídos.
-            boolean possuiProjetos = empresaBanco.getProjetos().stream()
-                    .anyMatch(projeto -> projeto.getStatus() != EnumStatusProjeto.EXCLUIDO);
-
-            if (possuiProjetos) {
-                throw new IllegalArgumentException(
-                        "Exclua os projetos da empresa antes de excluir a empresa!"
-                );
-            }
-
-            // Também não pode haver usuários ainda ativos ou bloqueados.
-            boolean possuiUsuarios = empresaBanco.getUsuarios().stream()
-                    .anyMatch(usuario -> usuario.getStatus() != EnumStatusUsuario.EXCLUIDO);
-
-            if (possuiUsuarios) {
-                throw new IllegalArgumentException(
-                        "Exclua os usuários da empresa antes de excluir a empresa!"
-                );
-            }
-        }
-
-        // BLOQUEADO pode voltar para ATIVO; EXCLUIDO não pode ser revertido.
+        // A entidade Empresa verifica as regras de exclusão
         empresaBanco.setStatus(status);
+        // Salva no banco
         empresaRepository.save(empresaBanco);
         return true;
     }

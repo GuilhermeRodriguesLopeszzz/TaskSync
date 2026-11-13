@@ -68,6 +68,12 @@ public class Usuario implements UserDetails {
     // Vincula um desenvolvedor a um projeto
     public void adicionarProjeto(Projeto projeto) {
 
+        if (projeto == null) {
+            throw new IllegalArgumentException(
+                    "Informe um projeto!"
+            );
+        }
+
         // Somente desenvolvedores podem participar de projetos
         if (this.role != EnumRole.ROLE_DEV) {
             throw new IllegalArgumentException(
@@ -75,15 +81,58 @@ public class Usuario implements UserDetails {
             );
         }
 
-        // Impede vincular o mesmo desenvolvedor duas vezes
+        // O desenvolvedor precisa estar ativo
+        if (this.status != EnumStatusUsuario.ATIVO) {
+            throw new IllegalArgumentException(
+                    "O desenvolvedor precisa estar ativo!"
+            );
+        }
+
+        // Desenvolvedor e projeto devem pertencer à mesma empresa
+        if (this.empresa == null ||
+                projeto.getEmpresa() == null ||
+                !this.empresa.getId().equals(projeto.getEmpresa().getId())) {
+
+            throw new IllegalArgumentException(
+                    "Desenvolvedor não pertence à empresa do projeto!"
+            );
+        }
+
+        // Não permite vínculos duplicados
         if (this.projetos.contains(projeto)) {
             throw new IllegalArgumentException(
                     "Desenvolvedor já está vinculado a este projeto!"
             );
         }
 
-        // Adiciona o projeto ao desenvolvedor
+        // Adiciona o relacionamento
         this.projetos.add(projeto);
+    }
+
+
+
+    // Altera a empresa do usuário
+    public void alterarEmpresa(Empresa novaEmpresa) {
+
+        if (novaEmpresa == null) {
+            throw new IllegalArgumentException(
+                    "Informe uma empresa!"
+            );
+        }
+
+        // Desenvolvedor não pode trocar de empresa
+        // enquanto estiver vinculado a projetos
+        if (this.role == EnumRole.ROLE_DEV &&
+                this.empresa != null &&
+                !this.empresa.getId().equals(novaEmpresa.getId()) &&
+                !this.projetos.isEmpty()) {
+
+            throw new IllegalArgumentException(
+                    "Desvincule o desenvolvedor dos projetos antes de mudar sua empresa!"
+            );
+        }
+
+        this.empresa = novaEmpresa;
     }
 
     public Usuario(CriarAdminRequest criarAdminRequest) {

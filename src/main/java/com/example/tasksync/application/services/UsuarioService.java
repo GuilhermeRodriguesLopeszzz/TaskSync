@@ -353,23 +353,13 @@ public class UsuarioService {
                 }
 
                 if (empresaBanco.getStatus() != EnumStatusEmpresa.ATIVO) {
-                    throw new IllegalArgumentException("A empresa precisa estar ativa!");
-                }
-
-                // Não permite trocar a empresa de um DEV
-                // que já participa de projetos
-                if (usuarioBanco.getRole() == EnumRole.ROLE_DEV &&
-                        usuarioBanco.getEmpresa() != null &&
-                        !usuarioBanco.getEmpresa().getId().equals(
-                                empresaBanco.getId()) &&
-                        !usuarioBanco.getProjetos().isEmpty()) {
-
                     throw new IllegalArgumentException(
-                            "Desvincule o desenvolvedor dos projetos antes de mudar sua empresa!"
+                            "A empresa precisa estar ativa!"
                     );
                 }
 
-                usuarioBanco.setEmpresa(empresaBanco);
+            // A entidade verifica se o usuário pode mudar de empresa
+                usuarioBanco.alterarEmpresa(empresaBanco);
 
             } else if (usuarioLogado.role() == EnumRole.ROLE_GERENTE) {
 

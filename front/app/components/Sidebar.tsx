@@ -24,15 +24,41 @@ export default function Sidebar() {
         Task<span className="text-transparent bg-clip-text bg-gradient-to-r from-amber-400 to-fuchsia-500">Sync</span>
       </div>
       <nav className="flex-1 flex flex-col gap-1 px-4 py-6">
-        <Link href="/home" className="px-4 py-2.5 rounded-xl text-sm font-medium text-zinc-400 hover:text-white hover:bg-white/5 transition-colors">Home</Link>
-        <Link href="/usuarios" className="px-4 py-2.5 rounded-xl text-sm font-medium text-zinc-400 hover:text-white hover:bg-white/5 transition-colors">Usuarios</Link>
-        <Link href="/tarefa" className="px-4 py-2.5 rounded-xl text-sm font-medium text-zinc-400 hover:text-white hover:bg-white/5 transition-colors">Tarefas</Link>
-        <Link href="/projeto" className="px-4 py-2.5 rounded-xl text-sm font-medium text-zinc-400 hover:text-white hover:bg-white/5 transition-colors">Projetos</Link>
-        <Link href="/desenvolvedor" className="px-4 py-2.5 rounded-xl text-sm font-medium text-zinc-400 hover:text-white hover:bg-white/5 transition-colors">Desenvolvedores</Link>
+        {/* Todos os usuários */}
+        {montado && usuario && (
+          <>
+            <Link href="/home" className="px-4 py-2.5 rounded-xl text-sm font-medium text-zinc-400 hover:text-white hover:bg-white/5 transition-colors">
+              Home
+            </Link>
 
-        {/* Só desenha o link se o menu já carregou no navegador E o perfil for ROLE_ADMIN */}
+            <Link href="/tarefa" className="px-4 py-2.5 rounded-xl text-sm font-medium text-zinc-400 hover:text-white hover:bg-white/5 transition-colors">
+              Tarefas
+            </Link>
+
+            <Link href="/projeto" className="px-4 py-2.5 rounded-xl text-sm font-medium text-zinc-400 hover:text-white hover:bg-white/5 transition-colors">
+              Projetos
+            </Link>
+          </>
+        )}
+
+        {/* Somente ADMIN e GERENTE */}
+        {montado && (usuario?.role === "ROLE_ADMIN" || usuario?.role === "ROLE_GERENTE") && (
+          <>
+            <Link href="/usuarios" className="px-4 py-2.5 rounded-xl text-sm font-medium text-zinc-400 hover:text-white hover:bg-white/5 transition-colors">
+              Usuários
+            </Link>
+
+            <Link href="/desenvolvedor" className="px-4 py-2.5 rounded-xl text-sm font-medium text-zinc-400 hover:text-white hover:bg-white/5 transition-colors">
+              Desenvolvedores
+            </Link>
+          </>
+        )}
+
+        {/* Somente ADMIN */}
         {montado && usuario?.role === "ROLE_ADMIN" && (
-          <Link href="/empresa" className="px-4 py-2.5 rounded-xl text-sm font-medium text-zinc-400 hover:text-white hover:bg-white/5 transition-colors">Empresas</Link>
+          <Link href="/empresa" className="px-4 py-2.5 rounded-xl text-sm font-medium text-zinc-400 hover:text-white hover:bg-white/5 transition-colors">
+            Empresas
+          </Link>
         )}
       </nav>
     </aside>

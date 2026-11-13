@@ -219,34 +219,17 @@ public class ProjetoService {
             return null;
         }
 
-        // Não permite vincular um desenvolvedor inativo
-        if (desenvolvedorBanco.getStatus() != EnumStatusUsuario.ATIVO) {
-            throw new IllegalArgumentException(
-                    "O desenvolvedor precisa estar ativo!"
-            );
-        }
-
-        // Verifica se o desenvolvedor pertence
-        // à mesma empresa do projeto
-        if (desenvolvedorBanco.getEmpresa() == null ||
-                projetoBanco.getEmpresa() == null ||
-                !desenvolvedorBanco.getEmpresa().getId().equals(
-                        projetoBanco.getEmpresa().getId())) {
-
-            throw new IllegalArgumentException(
-                    "Desenvolvedor não pertence à empresa do projeto!"
-            );
-        }
-
-        // A entidade Usuario verifica:
-        // 1. Se o usuário possui ROLE_DEV
-        // 2. Se já está vinculado ao projeto
+    // A entidade Usuario valida:
+    // - ROLE_DEV
+    // - Desenvolvedor ativo
+    // - Mesma empresa
+    // - Vínculo não duplicado
         desenvolvedorBanco.adicionarProjeto(projetoBanco);
 
-        // Salva pelo Usuario, que controla o relacionamento ManyToMany
+    // Salva pelo lado proprietário do relacionamento
         usuarioRepository.save(desenvolvedorBanco);
 
-        // Atualiza também o lado do Projeto em memória
+    // Atualiza o outro lado do relacionamento em memória
         projetoBanco.getDesenvolvedores().add(desenvolvedorBanco);
 
         return new ProjetoResponse(projetoBanco);

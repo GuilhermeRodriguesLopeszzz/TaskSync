@@ -1,8 +1,6 @@
 package com.example.tasksync.domain.entities;
 
-import com.example.tasksync.application.dto.EnumStatusTarefa;
-import com.example.tasksync.application.dto.TarefaRequest;
-import com.example.tasksync.application.dto.UsuarioRequest;
+import com.example.tasksync.application.dto.*;
 import com.example.tasksync.domain.valueobject.CPF;
 import jakarta.persistence.*;
 import lombok.*;
@@ -65,5 +63,75 @@ public class Tarefa {
                 this.titulo = titulo;
         }
 
-    }
+
+        // Atribui um desenvolvedor à tarefa
+        public void atribuirDesenvolvedor(Usuario desenvolvedor) {
+
+                if (desenvolvedor == null ||
+                        desenvolvedor.getRole() != EnumRole.ROLE_DEV) {
+                        throw new IllegalArgumentException(
+                                "Somente desenvolvedores podem receber tarefas!"
+                        );
+                }
+
+                if (desenvolvedor.getStatus() != EnumStatusUsuario.ATIVO) {
+                        throw new IllegalArgumentException(
+                                "O desenvolvedor precisa estar ativo!"
+                        );
+                }
+
+                // A tarefa precisa estar associada a um projeto
+                if (this.projeto == null) {
+                        throw new IllegalArgumentException(
+                                "A tarefa precisa pertencer a um projeto!"
+                        );
+                }
+
+                // Desenvolvedor e projeto precisam ser da mesma empresa
+                if (desenvolvedor.getEmpresa() == null ||
+                        this.projeto.getEmpresa() == null ||
+                        !desenvolvedor.getEmpresa().getId().equals(
+                                this.projeto.getEmpresa().getId())) {
+
+                        throw new IllegalArgumentException(
+                                "Desenvolvedor não pertence à empresa do projeto!"
+                        );
+                }
+
+                // O desenvolvedor precisa participar do projeto
+                if (!desenvolvedor.getProjetos().contains(this.projeto)) {
+                        throw new IllegalArgumentException(
+                                "Desenvolvedor não está vinculado a este projeto!"
+                        );
+                }
+
+                this.desenvolvedor = desenvolvedor;
+        }
+
+        // Atualiza o status respeitando o responsável
+        public void setStatus(EnumStatusTarefa status) {
+
+                if (status == null) {
+                        throw new IllegalArgumentException(
+                                "Informe o status da tarefa!"
+                        );
+                }
+
+                // A exclusão lógica não exige responsável ativo
+                if (status != EnumStatusTarefa.EXCLUIDO) {
+
+                        if (this.desenvolvedor == null ||
+                                this.desenvolvedor.getStatus() != EnumStatusUsuario.ATIVO) {
+
+                                throw new IllegalArgumentException(
+                                        "O responsável pela tarefa precisa estar ativo!"
+                                );
+                        }
+                }
+
+                this.status = status;
+        }
+
+
+}
 

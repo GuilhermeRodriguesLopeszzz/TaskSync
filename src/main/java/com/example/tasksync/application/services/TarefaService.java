@@ -181,7 +181,6 @@ public class TarefaService {
         // Somente ADMIN e GERENTE podem criar ou editar tarefas
         if (usuarioLogado.role() != EnumRole.ROLE_ADMIN &&
                 usuarioLogado.role() != EnumRole.ROLE_GERENTE) {
-
             throw new AccessDeniedException(
                     "Usuário sem permissão para criar ou editar tarefas!"
             );
@@ -189,31 +188,29 @@ public class TarefaService {
 
         // Verifica se os IDs foram informados
         if (tarefa == null ||
+                id == null ||
                 tarefa.projetoId() == null ||
                 tarefa.desenvolvedorId() == null) {
-
             throw new IllegalArgumentException(
                     "Informe o projeto e o desenvolvedor!"
             );
         }
 
-        // Se for edição, busca a tarefa antes de alterar os dados
         Tarefa tarefaBanco = null;
 
+        // Se for edição, busca a tarefa existente
         if (id != 0L) {
 
             tarefaBanco = tarefaRepository.findById(id).orElse(null);
 
-            // Não é permitido editar tarefas excluídas ou de projetos excluídos.
             if (tarefaBanco == null || !tarefaDisponivel(tarefaBanco)) {
                 return null;
             }
 
-            // Verifica se o usuário pode editar a tarefa existente
             verificarPermissaoTarefa(tarefaBanco, usuarioLogado);
         }
 
-        // Busca o projeto informado no Request
+        // Busca o projeto
         Projeto projetoBanco = projetoRepository.findById(
                 tarefa.projetoId()
         ).orElse(null);
@@ -224,9 +221,11 @@ public class TarefaService {
             );
         }
 
-        // Bloqueia tarefas novas ou editadas em projetos excluídos.
+        // Não permite usar projetos excluídos
         if (projetoBanco.getStatus() == EnumStatusProjeto.EXCLUIDO) {
-            throw new IllegalArgumentException("Não é possível usar um projeto excluído!");
+            throw new IllegalArgumentException(
+                    "Não é possível usar um projeto excluído!"
+            );
         }
 
         // GERENTE só pode gerenciar projetos da própria empresa
@@ -243,13 +242,15 @@ public class TarefaService {
             }
         }
 
-        // Bloqueia criação e edição em empresas bloqueadas ou excluídas.
+        // Empresa do projeto precisa estar ativa
         if (projetoBanco.getEmpresa() == null ||
                 projetoBanco.getEmpresa().getStatus() != EnumStatusEmpresa.ATIVO) {
-            throw new IllegalArgumentException("A empresa do projeto precisa estar ativa!");
+            throw new IllegalArgumentException(
+                    "A empresa do projeto precisa estar ativa!"
+            );
         }
 
-        // Busca o desenvolvedor informado
+        // Busca o desenvolvedor
         Usuario desenvolvedorBanco = usuarioRepository.findById(
                 tarefa.desenvolvedorId()
         ).orElse(null);
@@ -260,51 +261,16 @@ public class TarefaService {
             );
         }
 
-        // Somente ROLE_DEV pode receber tarefas
-        if (desenvolvedorBanco.getRole() != EnumRole.ROLE_DEV) {
-
-            throw new IllegalArgumentException(
-                    "Somente desenvolvedores podem receber tarefas!"
-            );
-        }
-
-        // Desenvolvedor bloqueado ou excluído não pode receber tarefas.
-        if (desenvolvedorBanco.getStatus() != EnumStatusUsuario.ATIVO) {
-            throw new IllegalArgumentException("O desenvolvedor precisa estar ativo!");
-        }
-
-        // Verifica se o desenvolvedor pertence à empresa do projeto
-        if (desenvolvedorBanco.getEmpresa() == null ||
-                projetoBanco.getEmpresa() == null ||
-                !desenvolvedorBanco.getEmpresa().getId().equals(
-                        projetoBanco.getEmpresa().getId())) {
-
-            throw new IllegalArgumentException(
-                    "Desenvolvedor não pertence à empresa do projeto!"
-            );
-        }
-
-        // Desenvolvedor precisa participar do projeto
-        if (!desenvolvedorBanco.getProjetos().contains(projetoBanco)) {
-
-            throw new IllegalArgumentException(
-                    "Desenvolvedor não está vinculado a este projeto!"
-            );
-        }
-
         // NOVA TAREFA
         if (id == 0L) {
 
             tarefaBanco = new Tarefa(tarefa);
 
-            // Associa o projeto e o desenvolvedor
+            // Define o projeto antes de atribuir o desenvolvedor
             tarefaBanco.setProjeto(projetoBanco);
-            tarefaBanco.setDesenvolvedor(desenvolvedorBanco);
 
-            // Salva a nova tarefa
-            tarefaRepository.save(tarefaBanco);
-
-            return new TarefaResponse(tarefaBanco);
+            // A entidade Tarefa valida o responsável
+            tarefaBanco.atribuirDesenvolvedor(desenvolvedorBanco);
 
         } else {
 
@@ -320,19 +286,21 @@ public class TarefaService {
                 );
             }
 
-            // Atualiza os dados da tarefa
+            // A entidade valida os dados necessários
             tarefaBanco.setTitulo(tarefa.titulo());
             tarefaBanco.setDescricao(tarefa.descricao());
             tarefaBanco.setDataPrazo(tarefa.dataPrazo());
 
-            // Permite trocar o responsável se estiver vinculado
-            tarefaBanco.setDesenvolvedor(desenvolvedorBanco);
-
-            tarefaRepository.save(tarefaBanco);
-
-            return new TarefaResponse(tarefaBanco);
+            // A entidade verifica o vínculo do desenvolvedor
+            tarefaBanco.atribuirDesenvolvedor(desenvolvedorBanco);
         }
+
+        // Salva a tarefa
+        tarefaRepository.save(tarefaBanco);
+
+        return new TarefaResponse(tarefaBanco);
     }
+
 
 
     // Busca uma tarefa pelo ID, respeitando as permissões
@@ -361,29 +329,26 @@ public class TarefaService {
 
         UsuarioLogado usuarioLogado = getUsuarioLogado();
 
-        // Impede atualizar sem informar um status
+        // Verifica se o status foi informado
         if (status == null) {
             throw new IllegalArgumentException(
                     "Informe o status da tarefa!"
             );
         }
 
-        // Busca a tarefa pelo ID
+        // Busca a tarefa
         Tarefa tarefaBanco = tarefaRepository.findById(id)
                 .orElse(null);
 
-        // Uma tarefa excluída ou de projeto excluído não pode ser alterada.
+        // Tarefas excluídas não podem ser alteradas
         if (tarefaBanco == null || !tarefaDisponivel(tarefaBanco)) {
             return false;
         }
 
-        // ADMIN e GERENTE respeitam suas permissões de empresa.
-        // DEV só pode alterar tarefas atribuídas a ele.
+        // Verifica as permissões do usuário
         verificarPermissaoTarefa(tarefaBanco, usuarioLogado);
 
-        // NOVA REGRA DE NEGÓCIO:
-        // Desenvolvedores não podem excluir tarefas pelo PATCH.
-        // Somente ADMIN e GERENTE podem utilizar o status EXCLUIDO.
+        // DEV não pode excluir tarefas
         if (usuarioLogado.role() == EnumRole.ROLE_DEV &&
                 status == EnumStatusTarefa.EXCLUIDO) {
 
@@ -392,26 +357,23 @@ public class TarefaService {
             );
         }
 
-        // Em empresa bloqueada, ADMIN pode apenas excluir a tarefa.
-        if (tarefaBanco.getProjeto().getEmpresa().getStatus() != EnumStatusEmpresa.ATIVO &&
+        // Empresa bloqueada permite somente exclusão
+        if (tarefaBanco.getProjeto().getEmpresa().getStatus()
+                != EnumStatusEmpresa.ATIVO &&
                 status != EnumStatusTarefa.EXCLUIDO) {
-            throw new IllegalArgumentException("A empresa da tarefa está bloqueada!");
+            throw new IllegalArgumentException(
+                    "A empresa da tarefa está bloqueada!"
+            );
         }
 
-        // Tarefa não excluída não pode mudar de status com DEV inativo.
-        if (status != EnumStatusTarefa.EXCLUIDO &&
-                (tarefaBanco.getDesenvolvedor() == null ||
-                        tarefaBanco.getDesenvolvedor().getStatus() != EnumStatusUsuario.ATIVO)) {
-            throw new IllegalArgumentException("O responsável pela tarefa precisa estar ativo!");
-        }
-
-        // Atualiza o status após validar as permissões
+        // A entidade Tarefa valida o responsável e o status
         tarefaBanco.setStatus(status);
 
         tarefaRepository.save(tarefaBanco);
 
         return true;
     }
+
 
 
     // Realiza a exclusão lógica da tarefa
