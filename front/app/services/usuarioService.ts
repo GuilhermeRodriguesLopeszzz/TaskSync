@@ -1,4 +1,3 @@
-
 import { Usuario } from "../(sistema)/types/usuario";
 import api from "./api";
 
@@ -64,6 +63,15 @@ export async function  salvarUsuario (usuario:Usuario): Promise<number>{
     return dadosRetorno.data;
 }
 
-export async function buscarUsuarioLogado(): Promise<Usuario> {
-    return (await api.get<Usuario>("/usuarios/buscarusuariologado")).data
+export async function buscarUsuarioLogado(token: string): Promise<Usuario> {
+    return (
+        await api.get<Usuario>(
+            "/usuarios/buscarusuariologado",
+            {
+                headers: {
+                    Authorization: `Bearer ${token}`
+                }
+            }
+        )
+    ).data;
 }

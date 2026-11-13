@@ -32,7 +32,7 @@ export default function SistemaLayout({ children }: { children: React.ReactNode 
 
             <div className="flex-1 flex flex-col min-w-0">
                 <Header />
-                <main className="flex-1">
+                <main className="flex-1 flex flex-col">
                     {children}
                 </main>
                 <Footer />

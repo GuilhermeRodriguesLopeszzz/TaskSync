@@ -35,7 +35,7 @@ export default function Login() {
             var loginResposta = await loginBack(emailTela,senhaTela);
 
                 if(loginResposta != null){
-                var usuarioLogado = await buscarUsuarioLogado();
+                var usuarioLogado = await buscarUsuarioLogado(loginResposta.token);
 
                 dispatch(
                     login({
