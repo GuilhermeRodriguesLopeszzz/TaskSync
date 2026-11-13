@@ -1,10 +1,11 @@
 'use client'
 
 import { useRouter } from "next/navigation";
-import { useDispatch } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
+import { useEffect } from "react";
+import { RootState } from "../redux/store";
 import { login } from "../redux/slice/authSlice";
 import { buscarUsuarioLogado } from "../services/usuarioService";
-import Cookies from "js-cookie";
 import { loginBack } from "../services/authService";
 
 
@@ -15,6 +16,15 @@ export default function Login() {
 
     const router = useRouter();
     const dispatch = useDispatch();
+    const usuario = useSelector((state: RootState) => state.auth.usuario);
+    const token = useSelector((state: RootState) => state.auth.token);
+    const autenticado = Boolean(usuario && token);
+
+    useEffect(() => {
+        if (autenticado) {
+            router.replace("/home");
+        }
+    }, [autenticado, router]);
 
     const handlelogin = async (formData: FormData) => {
 
@@ -25,7 +35,6 @@ export default function Login() {
             var loginResposta = await loginBack(emailTela,senhaTela);
 
                 if(loginResposta != null){
-                Cookies.set('token',loginResposta.token,{secure: true, expires: 7});
                 var usuarioLogado = await buscarUsuarioLogado();
 
                 dispatch(
@@ -34,7 +43,7 @@ export default function Login() {
                         usuario: { ...usuarioLogado },
                     })
                 );
-                router.push("/home");
+                router.replace("/home");
             } else {
                 alert("Login ou senha inválido")
             }
@@ -44,6 +53,11 @@ export default function Login() {
     }
 
 
+
+    // Usuário logado não deve ver o formulário de login.
+    if (autenticado) {
+        return null;
+    }
 
     return (
         <div className="min-h-screen flex items-center justify-center bg-[#0a0a0f] px-4 relative overflow-hidden">
