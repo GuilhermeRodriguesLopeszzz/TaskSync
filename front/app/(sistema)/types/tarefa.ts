@@ -5,6 +5,8 @@ export class Tarefa {
     public descricao: string,
     public dataPrazo: string,
     public status: string,
+    public projetoId: number | null,
+    public desenvolvedorId: number | null
   ) {}
 }
 

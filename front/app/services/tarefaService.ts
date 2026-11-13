@@ -50,15 +50,21 @@ export async function consultaTarefaPorId(id:number):Promise<Tarefa>{
 
 }
 
-export async function  atualizarTarefa (tarefa:Tarefa): Promise<number>{
-    var dadosRetorno = await  
-    api.put<number>('/tarefa/'+tarefa.id,tarefa);
+
+export async function atualizarTarefa(tarefa: Tarefa): Promise<Tarefa> {
+
+    const dadosRetorno = await api.put<Tarefa>(
+        "/tarefa/" + tarefa.id,
+        tarefa
+    );
     return dadosRetorno.data;
 }
 
+export async function salvarTarefa(tarefa: Tarefa): Promise<Tarefa> {
 
-export async function  salvarTarefa (tarefa:Tarefa): Promise<number>{
-    var dadosRetorno = await  
-    api.post<number>('/tarefa',tarefa);
+    const dadosRetorno = await api.post<Tarefa>(
+        "/tarefa",
+        tarefa
+    );
     return dadosRetorno.data;
 }
