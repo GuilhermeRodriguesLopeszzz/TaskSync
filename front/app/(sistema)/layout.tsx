@@ -1,4 +1,5 @@
-"use client"
+"use client";
+
 import { useSelector } from "react-redux";
 import Footer from "../components/Footer";
 import Header from "../components/Header";
@@ -6,32 +7,35 @@ import Sidebar from "../components/Sidebar";
 import { RootState } from "../redux/store";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
-export default function SistemaLayout({children}) {
 
-  
-    const usuario = useSelector((state:RootState)=> state.auth.usuario);
-
+export default function SistemaLayout({ children }: { children: React.ReactNode }) {
+    const usuario = useSelector((state: RootState) => state.auth.usuario);
+    const token = useSelector((state: RootState) => state.auth.token);
     const router = useRouter();
 
-    useEffect(()=>{
-        if(usuario == null){
-            router.push("/login");
+    useEffect(() => {
+        // Sem autenticação, manda o usuário para o login.
+        if (usuario == null || !token) {
+            router.replace("/login");
         }
-    })
-    return ( 
+    }, [usuario, token, router]);
 
-      <div className="flex min-h-screen bg-[#0a0a0f]">
+    // Não mostra o painel enquanto o usuário não estiver autenticado.
+    if (usuario == null || !token) {
+        return null;
+    }
 
-        <Sidebar/>
-       
-       <div className="flex-1 flex flex-col min-w-0">
-        <Header/>
-        <main className="flex-1">
-        {children}
-        </main>
+    return (
+        <div className="flex min-h-screen bg-[#0a0a0f]">
+            <Sidebar />
 
-        <Footer/>
-       </div>
-    
-    </div>);
-  }
+            <div className="flex-1 flex flex-col min-w-0">
+                <Header />
+                <main className="flex-1">
+                    {children}
+                </main>
+                <Footer />
+            </div>
+        </div>
+    );
+}
