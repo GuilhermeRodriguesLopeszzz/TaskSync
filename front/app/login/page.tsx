@@ -1,10 +1,11 @@
 'use client'
 
 import { useRouter } from "next/navigation";
-import { useDispatch } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
+import { useEffect } from "react";
+import { RootState } from "../redux/store";
 import { login } from "../redux/slice/authSlice";
 import { buscarUsuarioLogado } from "../services/usuarioService";
-import Cookies from "js-cookie";
 import { loginBack } from "../services/authService";
 
 
@@ -15,6 +16,15 @@ export default function Login() {
 
     const router = useRouter();
     const dispatch = useDispatch();
+    const usuario = useSelector((state: RootState) => state.auth.usuario);
+    const token = useSelector((state: RootState) => state.auth.token);
+
+    useEffect(() => {
+        // Quem já está autenticado deve acessar diretamente o painel.
+        if (usuario != null && token) {
+            router.replace("/home");
+        }
+    }, [usuario, token, router]);
 
     const handlelogin = async (formData: FormData) => {
 
@@ -25,7 +35,6 @@ export default function Login() {
             var loginResposta = await loginBack(emailTela,senhaTela);
 
                 if(loginResposta != null){
-                Cookies.set('token',loginResposta.token,{secure: true, expires: 7});
                 var usuarioLogado = await buscarUsuarioLogado();
 
                 dispatch(
@@ -44,6 +53,11 @@ export default function Login() {
     }
 
 
+
+    // Evita mostrar o formulário para um usuário já autenticado.
+    if (usuario != null && token) {
+        return null;
+    }
 
     return (
         <div className="min-h-screen flex items-center justify-center bg-[#0a0a0f] px-4 relative overflow-hidden">
