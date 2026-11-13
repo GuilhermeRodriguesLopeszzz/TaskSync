@@ -6,7 +6,8 @@ export class Projeto {
     public dataInicio: string,
     public dataPrevistaFim: string,
     public status: string,
-    public desenvolvedoresIds: number[] = []
+    public desenvolvedoresIds: number[] = [],
+    public empresaId: number | null = null
   ) {}
 }
 
