@@ -36,6 +36,13 @@ public class Empresa {
 
     private String nomeFantasia;
 
+    // Dados do endereço consultados pelo CEP.
+    private String cep;
+    private String logradouro;
+    private String bairro;
+    private String cidade;
+    private String uf;
+
     // Uma empresa pode possuir vários usuários.
     // mappedBy indica que o relacionamento é controlado por Usuario.empresa.
     @OneToMany(mappedBy = "empresa")

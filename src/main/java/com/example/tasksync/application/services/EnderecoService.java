@@ -14,7 +14,12 @@ public class EnderecoService {
 
     public EnderecoResponse BuscarEndereco(String cep) {
 
-        var enderecoCompleto =  viaCepExternalRepository.buscarEnderecoViaCepPorCep(cep);
+        // Aceita CEP com ou sem hífen, mas exige oito dígitos.
+        if (cep == null || !cep.matches("[0-9]{5}-?[0-9]{3}")) {
+            throw new IllegalArgumentException("Informe um CEP válido com 8 dígitos!");
+        }
+
+        var enderecoCompleto = viaCepExternalRepository.buscarEnderecoViaCepPorCep(cep.replace("-", ""));
 
         return new EnderecoResponse( enderecoCompleto.getCep(),
                 enderecoCompleto.getLogradouro(),

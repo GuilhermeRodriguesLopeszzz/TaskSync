@@ -7,7 +7,12 @@ public record EmpresaResponse(
         String cnpj,
         String nomeFantasia,
         String razaoSocial,
-        EnumStatusEmpresa status
+        EnumStatusEmpresa status,
+        String cep,
+        String logradouro,
+        String bairro,
+        String cidade,
+        String uf
 ) {
     public EmpresaResponse(Empresa empresa) {
         this(
@@ -18,7 +23,12 @@ public record EmpresaResponse(
                         : null,
                 empresa.getNomeFantasia(),
                 empresa.getRazaoSocial(),
-                empresa.getStatus()
+                empresa.getStatus(),
+                empresa.getCep(),
+                empresa.getLogradouro(),
+                empresa.getBairro(),
+                empresa.getCidade(),
+                empresa.getUf()
         );
     }
 }

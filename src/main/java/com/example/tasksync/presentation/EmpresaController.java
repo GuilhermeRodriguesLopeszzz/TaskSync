@@ -162,6 +162,12 @@ public class EmpresaController {
     }
 
 
+    // Informa quando o serviço de CEP estiver indisponível.
+    @ExceptionHandler(IllegalStateException.class)
+    public ResponseEntity<String> consultaIndisponivel(IllegalStateException e) {
+        return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body(e.getMessage());
+    }
+
     // Trata erros de validação e regras de negócio
     @ExceptionHandler(IllegalArgumentException.class)
     public ResponseEntity<String> dadosInvalidos(

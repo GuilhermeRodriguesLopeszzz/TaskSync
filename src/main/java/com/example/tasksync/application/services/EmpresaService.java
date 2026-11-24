@@ -23,6 +23,20 @@ public class EmpresaService {
     @Autowired
     private UsuarioRepository usuarioRepository;
 
+    @Autowired
+    private EnderecoService enderecoService;
+
+    // Consulta o ViaCEP e preenche o endereço antes de salvar a empresa.
+    private void preencherEndereco(Empresa empresa, String cep) {
+        EnderecoResponse endereco = enderecoService.BuscarEndereco(cep);
+
+        empresa.setCep(endereco.cep());
+        empresa.setLogradouro(endereco.logradouro());
+        empresa.setBairro(endereco.bairro());
+        empresa.setCidade(endereco.cidade());
+        empresa.setUf(endereco.uf());
+    }
+
     // Confere a situação atual do administrador no banco.
     // Assim, um token antigo não autoriza um usuário já desativado.
     private void verificarAdministradorAtivo() {
@@ -75,6 +89,7 @@ public class EmpresaService {
                 throw new IllegalArgumentException("Já existe uma empresa cadastrada com este CNPJ!");
             }
 
+            preencherEndereco(empresaBanco, empresa.cep());
             empresaRepository.save(empresaBanco);
             return new EmpresaResponse(empresaBanco);
 
@@ -100,6 +115,12 @@ public class EmpresaService {
             empresaBanco.setRazaoSocial(empresa.razaoSocial());
             empresaBanco.setCnpj(novoCnpj);
             empresaBanco.setNomeFantasia(empresa.nomeFantasia());
+
+            // Se o CEP não mudou, mantém o endereço já salvo no banco.
+            // Requisições antigas sem CEP também preservam o endereço.
+            if (empresa.cep() != null && !empresa.cep().equals(empresaBanco.getCep())) {
+                preencherEndereco(empresaBanco, empresa.cep());
+            }
 
             empresaRepository.save(empresaBanco);
             return new EmpresaResponse(empresaBanco);
