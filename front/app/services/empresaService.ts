@@ -1,4 +1,4 @@
-import { Empresa } from "../(sistema)/types/empresa";
+import { Empresa, Endereco } from "../(sistema)/types/empresa";
 import api from "./api";
 
 
@@ -51,15 +51,28 @@ export async function consultaEmpresaPorId(id:number):Promise<Empresa>{
 }
 
 
-export async function  atualizarEmpresa (empresa:Empresa): Promise<number>{
-    var dadosRetorno = await  
-    api.put<number>('/empresa/'+empresa.id,empresa);
+// Consulta o endereço pelo backend, utilizando o Axios e o token já configurados.
+export async function buscarEnderecoPorCep(cep: string): Promise<Endereco> {
+    const dadosRetorno = await api.get<Endereco>('/endereco/' + cep);
     return dadosRetorno.data;
 }
 
+export async function atualizarEmpresa(empresa: Empresa): Promise<Empresa> {
+    const dadosRetorno = await api.put<Empresa>('/empresa/' + empresa.id, {
+        razaoSocial: empresa.razaoSocial,
+        cnpj: empresa.cnpj,
+        nomeFantasia: empresa.nomeFantasia,
+        cep: empresa.cep
+    });
+    return dadosRetorno.data;
+}
 
-export async function  salvarEmpresa (empresa:Empresa): Promise<number>{
-    var dadosRetorno = await  
-    api.post<number>('/empresa',empresa);
+export async function salvarEmpresa(empresa: Empresa): Promise<Empresa> {
+    const dadosRetorno = await api.post<Empresa>('/empresa', {
+        razaoSocial: empresa.razaoSocial,
+        cnpj: empresa.cnpj,
+        nomeFantasia: empresa.nomeFantasia,
+        cep: empresa.cep
+    });
     return dadosRetorno.data;
 }
