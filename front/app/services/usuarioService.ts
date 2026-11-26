@@ -50,16 +50,16 @@ export async function consultaUsuarioPorId(id:number):Promise<Usuario>{
 
 }
 
-export async function  atualizarUsuario (usuario:Usuario): Promise<number>{
-    var dadosRetorno = await  
-    api.put<number>('/usuarios/'+usuario.id,usuario);
+export async function atualizarUsuario(usuario: Usuario): Promise<Usuario> {
+    var dadosRetorno = await
+        api.put<Usuario>('/usuarios/' + usuario.id, usuario);
     return dadosRetorno.data;
 }
 
 
-export async function  salvarUsuario (usuario:Usuario): Promise<number>{
-    var dadosRetorno = await  
-    api.post<number>('/usuarios',usuario);
+export async function salvarUsuario(usuario: Usuario): Promise<Usuario> {
+    var dadosRetorno = await
+        api.post<Usuario>('/usuarios', usuario);
     return dadosRetorno.data;
 }
 
